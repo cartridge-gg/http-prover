@@ -12,3 +12,5 @@ LAYOUT='recursive'
 
 # Call the Python script to combine the JSON files
 python scripts/combine_json.py "$FILE1" "$FILE2" "$LAYOUT" "$OUTPUT"
+
+cp "$OUTPUT" examples/Cairo/prover_input.json
