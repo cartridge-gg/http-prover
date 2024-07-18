@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eux
+
 # This script assumes Python is installed and accessible from the command line as 'python'
 
 # Variables for JSON files and output
