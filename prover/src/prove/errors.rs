@@ -19,7 +19,6 @@ pub enum ServerError {
 
 #[derive(Error, Debug)]
 pub enum ProveError {
-
     #[error("Unauthorized public key request")]
     UnauthorizedPublicKey,
 
