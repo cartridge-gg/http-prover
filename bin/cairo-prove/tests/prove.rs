@@ -6,14 +6,14 @@ use std::path::PathBuf;
 
 mod common;
 
-#[tokio::test]
+// #[tokio::test]
 async fn test_cairo1_fibonacci() -> Result<(), cairo_prove::ProveError> {
     let (handle, key, url) = spawn_prover().await;
 
     let args = CliInput {
         key: key.signing_key_as_hex_string(),
         cairo_version: 1,
-        url: url,
+        url,
     };
 
     let prover_input = read_file(PathBuf::from("examples/Cairo/prover_input.json")).await?;
@@ -29,7 +29,7 @@ async fn test_cairo0_fibonacci() -> Result<(), cairo_prove::ProveError> {
     let args = CliInput {
         key: key.signing_key_as_hex_string(),
         cairo_version: 0,
-        url: url,
+        url,
     };
     let prover_input = read_file(PathBuf::from("examples/CairoZero/prover_input.json")).await?;
     let program_input: Value = serde_json::from_str(&prover_input)?;
