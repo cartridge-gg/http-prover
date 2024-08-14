@@ -39,7 +39,7 @@ mod tests {
             Json(input_json),
         )
         .await;
-
+        println!("{:?}", result);
         // Check if the result is as expected
         assert!(result.is_ok());
         // Add assertions based on the expected behavior of root function
