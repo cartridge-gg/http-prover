@@ -86,7 +86,10 @@ mod tests {
         let sdk = ProverSDK::new(get_signing_key(), prover_url).await?;
         //Act: Load wrong prover input to test invalid prover version
 
-        let data = load_cairo1(PathBuf::from("../examples/Cairo/fibonacci_prover_input.json")).await?;
+        let data = load_cairo1(PathBuf::from(
+            "../examples/Cairo/fibonacci_prover_input.json",
+        ))
+        .await?;
 
         let proof = sdk.prove_cairo0(data).await;
         // If authentication fails, print out the error message

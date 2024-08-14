@@ -12,10 +12,11 @@ async fn test_cairo1_fibonacci() -> Result<(), cairo_prove::ProveError> {
     let args = CliInput {
         key: key.to_string(),
         cairo_version: 1,
-        url: Url::parse(&format!("http://localhost:3040")).unwrap()
+        url: Url::parse(&format!("http://localhost:3040")).unwrap(),
     };
 
-    let prover_input = read_file(PathBuf::from("examples/Cairo/fibonacci_prover_input.json")).await?;
+    let prover_input =
+        read_file(PathBuf::from("examples/Cairo/fibonacci_prover_input.json")).await?;
     let proof = prove(args, prover_input).await?;
     assert!(extract_output(&proof).is_ok());
     Ok(())
@@ -26,7 +27,7 @@ async fn test_cairo0_fibonacci() -> Result<(), cairo_prove::ProveError> {
     let args = CliInput {
         key: key.to_string(),
         cairo_version: 0,
-        url: Url::parse(&format!("http://localhost:3040")).unwrap()
+        url: Url::parse(&format!("http://localhost:3040")).unwrap(),
     };
     let prover_input = read_file(PathBuf::from("examples/CairoZero/prover_input.json")).await?;
     let program_input: Value = serde_json::from_str(&prover_input)?;
