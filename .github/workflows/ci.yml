@@ -37,10 +37,5 @@ jobs:
           ls -Rl examples/
       - name: Build
         run: cargo build --verbose
-      - name: Run prover
-        run: |
-          set -eux
-          cargo run -p prover -- --jwt-secret-key "asdf" --authorized-keys "0xd16b71c90dbf897e5964d2f267d04664b3c035036559d712994739ea6cf2fd9f" --message-expiration-time 60 --session-expiration-time 3600 &
-          while ! curl localhost:3000; do sleep 5; done
       - name: Run tests
-        run: cargo test --no-fail-fast --workspace --verbose
+        run: ./scripts/e2e_test.sh
