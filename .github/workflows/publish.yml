@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - hotfix
+      - remove-docker
     tags:
       - "v*"
 
