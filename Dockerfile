@@ -21,7 +21,7 @@ RUN cargo build --release -p prover
 RUN cargo install --git https://github.com/lambdaclass/cairo-vm --rev 37ea72977dccbc2b90b8b7534c1edabd2e2fef79 cairo1-run
 
 
-FROM piotr439/prover AS prover
+FROM docker.io/piotr439/prover AS prover
 
 
 FROM python:3.9.18-slim-bookworm AS final
