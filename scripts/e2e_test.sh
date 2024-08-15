@@ -25,6 +25,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo test --no-fail-fast --workspace --verbose
+cargo test --no-fail-fast --workspace --verbose -- --test-threads=1
 
 podman stop $IMAGE_NAME
