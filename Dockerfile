@@ -21,7 +21,7 @@ RUN cargo build --release -p prover
 RUN cargo install --git https://github.com/lambdaclass/cairo-vm --rev 37ea72977dccbc2b90b8b7534c1edabd2e2fef79 cairo1-run
 
 
-FROM piotr439/prover AS prover
+FROM docker.io/piotr439/prover AS prover
 
 
 FROM python:3.9.18-slim-bookworm AS final
@@ -35,8 +35,8 @@ COPY --from=prover /usr/bin/cpu_air_prover /usr/local/bin/cpu_air_prover
 
 COPY --from=builder /app/config/cpu_air_prover_config.json /config/cpu_air_prover_config.json
 
-RUN git clone --depth=1 -b v2.7.0-rc.3 https://github.com/starkware-libs/cairo.git 
-RUN mv cairo/corelib/ . 
+RUN git clone --depth=1 -b v2.7.0-rc.3 https://github.com/starkware-libs/cairo.git
+RUN mv cairo/corelib/ .
 RUN rm -rf cairo
 
 RUN pip install cairo-lang==0.13.1
