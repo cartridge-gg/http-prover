@@ -25,41 +25,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo test --test prove test_cairo1_fibonacci
-if [ $? -ne 0 ]; then
-    echo "First test (test_cairo1s_fibonacci) failed. Exiting."
-    podman stop $IMAGE_NAME
-    exit 1
-fi
-cargo test --test prove test_cairo0_fibonacci
-if [ $? -ne 0 ]; then
-    echo "Second test (test_cairo0_fibonacci) failed. Exiting."
-    podman stop $IMAGE_NAME
-    exit 1
-fi
-cargo test --test sdk_test test_prover_cairo0
-if [ $? -ne 0 ]; then
-    echo "Second test (test_prover_cairo0) failed. Exiting."
-    podman stop $IMAGE_NAME
-    exit 1
-fi
-cargo test --test sdk_test test_prover_cairo1
-if [ $? -ne 0 ]; then
-    echo "Second test (test_prover_cairo1) failed. Exiting."
-    podman stop $IMAGE_NAME
-    exit 1
-fi
-cargo test --test sdk_test test_invalid_url_auth 
-if [ $? -ne 0 ]; then
-    echo "Second test (test_prover_cairo1) failed. Exiting."
-    podman stop $IMAGE_NAME
-    exit 1
-fi
-cargo test --test sdk_test test_invalid_prover
-if [ $? -ne 0 ]; then
-    echo "Second test (test_prover_cairo1) failed. Exiting."
-    podman stop $IMAGE_NAME
-    exit 1
-fi
+cargo test --no-fail-fast --workspace --verbose
 
 podman stop $IMAGE_NAME
