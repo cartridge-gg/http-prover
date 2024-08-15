@@ -8,6 +8,10 @@ if podman images | grep -q "$IMAGE_NAME"; then
 else
     echo "Image $IMAGE_NAME does not exist. Building the image..."
     podman build -t $IMAGE_NAME .
+    if [ $? -ne 0 ]; then
+        echo "Failed to build the image. Exiting."
+        exit 1
+    fi
 fi
 
 podman run -d --replace --name http_prover_test \
@@ -16,6 +20,10 @@ podman run -d --replace --name http_prover_test \
     --message-expiration-time 3600 \
     --session-expiration-time 3600 \
     --authorized-keys 0xed126082726a1062ed6e886b2d7aba42e4f8964a13b4569988bd4c50b9a62076
+if [ $? -ne 0 ]; then
+    echo "Failed to run the image. Exiting."
+    exit 1
+fi
 
 cargo test --test prove test_cairo1_fibonacci
 if [ $? -ne 0 ]; then
