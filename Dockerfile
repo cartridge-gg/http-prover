@@ -37,6 +37,7 @@ COPY --from=prover /usr/bin/cpu_air_verifier /usr/local/bin/cpu_air_verifier
 COPY --from=builder /app/config/cpu_air_prover_config.json /config/cpu_air_prover_config.json
 RUN git clone --depth=1 -b v2.7.0-rc.3 https://github.com/starkware-libs/cairo.git 
 RUN mv cairo/corelib/ . 
+
 RUN rm -rf cairo
 
 RUN pip install cairo-lang==0.13.1
