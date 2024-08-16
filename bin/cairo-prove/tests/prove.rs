@@ -2,17 +2,19 @@ use crate::common::read_file;
 use cairo_proof_parser::output::{extract_output, ExtractOutputResult};
 use cairo_prove::{prove, CliInput};
 use serde_json::Value;
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 use url::Url;
 mod common;
 
 #[tokio::test]
 async fn test_cairo1_fibonacci() -> Result<(), cairo_prove::ProveError> {
     let key = "0x5883b0e30b008e48af3d0bf5cfc138fb6093496da6f87d24b65def88470356d3";
+    let port = env::var("PORT").unwrap();
+    let prover_url = Url::parse(&format!("http://localhost:{}", port)).unwrap();
     let args = CliInput {
         key: key.to_string(),
         cairo_version: 1,
-        url: Url::parse("http://localhost:3040").unwrap(),
+        url: prover_url,
     };
 
     let prover_input =
@@ -24,10 +26,12 @@ async fn test_cairo1_fibonacci() -> Result<(), cairo_prove::ProveError> {
 #[tokio::test]
 async fn test_cairo0_fibonacci() -> Result<(), cairo_prove::ProveError> {
     let key = "0x5883b0e30b008e48af3d0bf5cfc138fb6093496da6f87d24b65def88470356d3";
+    let port = env::var("PORT").unwrap();
+    let prover_url = Url::parse(&format!("http://localhost:{}", port)).unwrap();
     let args = CliInput {
         key: key.to_string(),
         cairo_version: 0,
-        url: Url::parse("http://localhost:3040").unwrap(),
+        url: prover_url,
     };
     let prover_input = read_file(PathBuf::from("examples/CairoZero/prover_input.json")).await?;
     let program_input: Value = serde_json::from_str(&prover_input)?;
