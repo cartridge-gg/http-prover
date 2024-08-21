@@ -10,21 +10,18 @@ use clap::{arg, Parser, ValueHint};
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
-    /// Host address to bind the server
     #[arg(long, env, default_value = "0.0.0.0")]
     pub host: String,
-
-    /// Port to listen on
     #[arg(long, short, env, default_value = "3000")]
     pub port: u16,
     #[arg(long, short, env)]
     pub jwt_secret_key: String,
-    #[arg(long, short, env)]
+    #[arg(long, short, env, default_value = "3600")]
     pub message_expiration_time: u32,
-    #[arg(long, short, env)]
+    #[arg(long, short, env, default_value = "3600")]
     pub session_expiration_time: u32,
-    #[arg(long, short, env, value_hint = ValueHint::FilePath)]
+    #[arg(long, env, value_hint = ValueHint::FilePath)]
     pub authorized_keys_path: Option<PathBuf>,
-    #[arg(long, short = 'f', env)]
+    #[arg(long, env)]
     pub authorized_keys: Option<Vec<String>>,
 }
