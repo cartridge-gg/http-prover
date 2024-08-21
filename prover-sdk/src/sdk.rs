@@ -1,5 +1,5 @@
 use crate::errors::ProverSdkErrors;
-use crate::prove_sdk_builder::ProverSDKBuilder;
+use crate::builder::ProverSDKBuilder;
 use crate::ProverAccessKey;
 
 use common::{AddAuthorizedRequest, ProverInput};
@@ -68,7 +68,7 @@ impl ProverSDK {
     ///
     /// Returns a `Result` containing a string representing the response from the Prover service
     /// if successful, or a `ProverSdkErrors` if an error occurs.
-    pub async fn prove_cairo1<T>(&self, data: T) -> Result<String, ProverSdkErrors>
+    pub async fn prove_cairo<T>(&self, data: T) -> Result<String, ProverSdkErrors>
     where
         T: ProverInput + Send + 'static,
     {

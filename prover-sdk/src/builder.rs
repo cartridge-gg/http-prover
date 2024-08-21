@@ -1,6 +1,6 @@
-use crate::access_key::ProverAccessKey;
+use crate::access::ProverAccessKey;
 use crate::errors::ProverSdkErrors;
-use crate::prover_sdk::ProverSDK;
+use crate::sdk::ProverSDK;
 
 use common::{bytes_to_hex_string, JWTResponse, ValidateSignatureRequest};
 use ed25519_dalek::{Signature, Signer, VerifyingKey};
@@ -249,7 +249,7 @@ impl ProverSDKBuilder {
                 .map_err(ProverSdkErrors::UrlParseError)?,
             prover_cairo1: self
                 .base_url
-                .join("/prove/cairo1")
+                .join("/prove/cairo")
                 .map_err(ProverSdkErrors::UrlParseError)?,
             register: self
                 .base_url

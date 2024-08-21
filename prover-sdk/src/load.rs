@@ -16,7 +16,7 @@ pub async fn load_cairo0(file_path: PathBuf) -> Result<Cairo0ProverInput, Prover
     Ok(json_value)
 }
 
-pub async fn load_cairo1(file_path: PathBuf) -> Result<Cairo1ProverInput, ProverSdkErrors> {
+pub async fn load_cairo(file_path: PathBuf) -> Result<Cairo1ProverInput, ProverSdkErrors> {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let mut file = File::open(manifest_dir.join(file_path)).await?;
     let mut json_string = String::new();

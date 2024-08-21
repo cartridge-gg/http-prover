@@ -1,16 +1,16 @@
-pub use access_key::ProverAccessKey;
+pub use access::ProverAccessKey;
 pub use common::{Cairo0ProverInput, Cairo1CompiledProgram, Cairo1ProverInput, CompiledProgram};
 pub use errors::ProverSdkErrors;
-pub use load::{load_cairo0, load_cairo1};
+pub use load::{load_cairo0, load_cairo};
 pub use prover_sdk::ProverSDK;
-use prover_sdk::{access_key, errors, load};
+use prover_sdk::{access, errors, load};
 
 #[cfg(test)]
 mod tests {
     use std::env;
     use std::path::PathBuf;
 
-    use crate::load::{load_cairo0, load_cairo1};
+    use crate::load::{load_cairo0, load_cairo};
     use crate::ProverAccessKey;
     use prover_sdk::{ProverSDK, ProverSdkErrors};
     use url::Url;
@@ -73,11 +73,11 @@ mod tests {
 
         let sdk = ProverSDK::new(get_signing_key(), prover_url).await?;
 
-        let data = load_cairo1(PathBuf::from(
+        let data = load_cairo(PathBuf::from(
             "../examples/Cairo/fibonacci_prover_input.json",
         ))
         .await?;
-        let proof = sdk.prove_cairo1(data).await;
+        let proof = sdk.prove_cairo(data).await;
 
         assert!(proof.is_ok(), "Failed to generate proof with Cairo 1");
 
@@ -120,7 +120,7 @@ mod tests {
         let sdk = ProverSDK::new(get_signing_key(), prover_url).await?;
 
         // Load Cairo 1 prover input data (intentional mismatch)
-        let data = load_cairo1(PathBuf::from(
+        let data = load_cairo(PathBuf::from(
             "../examples/Cairo/fibonacci_prover_input.json",
         ))
         .await?;

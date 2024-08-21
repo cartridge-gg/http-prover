@@ -50,7 +50,7 @@ pub async fn prove(args: CliInput, input: String) -> Result<String, ProveError> 
         1 => {
             let input: Cairo1ProverInput =
                 serde_json::from_str(&input).map_err(ProveError::ParseInput)?;
-            sdk.prove_cairo1(input).await.map_err(ProveError::Prove)?
+            sdk.prove_cairo(input).await.map_err(ProveError::Prove)?
         }
         _ => panic!("Invalid cairo version"),
     };
