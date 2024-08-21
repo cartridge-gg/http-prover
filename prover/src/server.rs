@@ -9,12 +9,9 @@ use crate::{
 };
 use axum::{routing::post, Router};
 use prove::errors::ServerError;
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 use std::{net::SocketAddr, time::Duration};
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, sync::Mutex};
 use tower_http::{limit::RequestBodyLimitLayer, timeout::TimeoutLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utils::shutdown::shutdown_signal;
@@ -27,6 +24,7 @@ pub struct AppState {
     pub jwt_secret_key: String,
     pub nonces: Arc<Mutex<HashMap<String, String>>>,
     pub authorizer: Authorizer,
+    pub lock: Arc<Mutex<()>>,
 }
 
 pub async fn start(args: Args) -> Result<(), ServerError> {
@@ -58,6 +56,7 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
         session_expiration_time: args.session_expiration_time as usize,
         jwt_secret_key: args.jwt_secret_key,
         authorizer,
+        lock: Arc::new(Mutex::new(())),
     };
 
     async fn ok_handler() -> &'static str {

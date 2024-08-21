@@ -43,8 +43,7 @@ pub async fn generate_nonce(
     let message_expiration_time: usize = state.message_expiration_time;
     let nonce: Nonce = Nonce::new(32);
     let nonce_string = nonce.to_string();
-    let mut nonces: std::sync::MutexGuard<'_, std::collections::HashMap<String, String>> =
-        state.nonces.lock().unwrap();
+    let mut nonces = state.nonces.lock().await;
     let formatted_key = params.public_key.trim().to_lowercase();
 
     nonces.insert(formatted_key.clone(), nonce_string);
@@ -74,10 +73,7 @@ pub async fn validate_signature(
 
     let session_expiration_time: usize = state.session_expiration_time;
 
-    let nonces = state
-        .nonces
-        .lock()
-        .map_err(|_| ProveError::InternalServerError("Failed to lock state".to_string()))?;
+    let nonces = state.nonces.lock().await;
 
     let user_nonce = nonces.get(&encoded_key).ok_or_else(|| {
         ProveError::NotFound(format!(

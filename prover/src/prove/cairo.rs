@@ -1,5 +1,7 @@
 use crate::auth::jwt::Claims;
 use crate::prove::errors::ProveError;
+use crate::server::AppState;
+use axum::extract::State;
 use axum::Json;
 use common::Cairo1ProverInput;
 use config_generator::generate_config;
@@ -10,17 +12,19 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub async fn root(
+    State(state): State<AppState>,
     _claims: Claims,
     Json(program_input): Json<Cairo1ProverInput>,
 ) -> Result<String, ProveError> {
-    let program_input_path: PathBuf = Path::new("resources/cairo/input.txt").to_path_buf();
-    let program_path: PathBuf = Path::new("resources/cairo/program.json").to_path_buf();
+    let _lock = state.lock.lock().await;
+    let program_input_path: PathBuf = Path::new("input.txt").to_path_buf();
+    let program_path: PathBuf = Path::new("program.json").to_path_buf();
     let proof_path: PathBuf = Path::new("program_proof_cairo1.json").to_path_buf();
-    let trace_file = Path::new("resources/cairo/program_trace.trace").to_path_buf();
-    let memory_file = Path::new("resources/cairo/program_memory.memory").to_path_buf();
-    let public_input_file = Path::new("resources/cairo/program_public_input.json").to_path_buf();
-    let private_input_file = Path::new("resources/cairo/program_private_input.json").to_path_buf();
-    let params_file = Path::new("resources/cairo/cpu_air_params.json").to_path_buf();
+    let trace_file = Path::new("program_trace.trace").to_path_buf();
+    let memory_file = Path::new("program_memory.memory").to_path_buf();
+    let public_input_file = Path::new("program_public_input.json").to_path_buf();
+    let private_input_file = Path::new("program_private_input.json").to_path_buf();
+    let params_file = Path::new("cpu_air_params.json").to_path_buf();
     let config_file = Path::new("config/cpu_air_prover_config.json").to_path_buf();
 
     let input = serde_json::to_string(&program_input.program_input)?;
@@ -65,10 +69,7 @@ pub async fn root(
     let mut child = command.spawn()?;
     let _status = child.wait()?;
 
-    generate_config::generate(
-        "resources/cairo/program_public_input.json",
-        "resources/cairo/cpu_air_params.json",
-    );
+    generate_config::generate("program_public_input.json", "cpu_air_params.json");
 
     //run cpu_air_prover
     let mut command_proof = Command::new("cpu_air_prover");

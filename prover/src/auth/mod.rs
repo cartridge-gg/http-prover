@@ -34,7 +34,7 @@ mod tests {
     use ed25519_dalek::SigningKey;
     use std::collections::HashMap;
     use std::sync::Arc;
-    use std::sync::Mutex;
+    use tokio::sync::Mutex;
 
     #[tokio::test]
     async fn test_generate_nonce() -> Result<(), ProveError> {
@@ -56,6 +56,7 @@ mod tests {
             session_expiration_time: 3600,
             jwt_secret_key: "jwt_secret".to_string(),
             authorizer: Authorizer::Memory(vec![public_key_hex.clone()].into()),
+            lock: Arc::new(Mutex::new(())),
         };
         let params = GenerateNonceRequest {
             public_key: public_key_hex,

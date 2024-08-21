@@ -1,6 +1,6 @@
-use crate::auth::jwt::Claims;
 use crate::prove::errors::ProveError;
-use axum::Json;
+use crate::{auth::jwt::Claims, server::AppState};
+use axum::{extract::State, Json};
 use common::Cairo0ProverInput;
 use config_generator::generate_config;
 use serde_json::Value;
@@ -11,19 +11,19 @@ use std::{
 use tokio::fs;
 
 pub async fn root(
+    State(state): State<AppState>,
     _claims: Claims,
     Json(program_input): Json<Cairo0ProverInput>,
 ) -> Result<String, ProveError> {
-    let program_input_path: PathBuf = Path::new("resources/cairoZero/input.json").to_path_buf();
-    let program_path: PathBuf = Path::new("resources/cairoZero/program.json").to_path_buf();
+    let _lock = state.lock.lock().await;
+    let program_input_path: PathBuf = Path::new("input.json").to_path_buf();
+    let program_path: PathBuf = Path::new("program.json").to_path_buf();
     let proof_path: PathBuf = Path::new("program_proof_cairo0.json").to_path_buf();
-    let trace_file = Path::new("resources/cairoZero/program_trace.trace").to_path_buf();
-    let memory_file = Path::new("resources/cairoZero/program_memory.memory").to_path_buf();
-    let public_input_file =
-        Path::new("resources/cairoZero/program_public_input.json").to_path_buf();
-    let private_input_file =
-        Path::new("resources/cairoZero/program_private_input.json").to_path_buf();
-    let params_file = Path::new("resources/cairoZero/cpu_air_params.json").to_path_buf();
+    let trace_file = Path::new("program_trace.trace").to_path_buf();
+    let memory_file = Path::new("program_memory.memory").to_path_buf();
+    let public_input_file = Path::new("program_public_input.json").to_path_buf();
+    let private_input_file = Path::new("program_private_input.json").to_path_buf();
+    let params_file = Path::new("cpu_air_params.json").to_path_buf();
     let config_file = Path::new("config/cpu_air_prover_config.json").to_path_buf();
 
     let input = serde_json::to_string(&program_input.program_input)?;
@@ -55,10 +55,7 @@ pub async fn root(
     let mut child = command.spawn()?;
     let _status = child.wait()?;
 
-    generate_config::generate(
-        "resources/cairoZero/program_public_input.json",
-        "resources/cairoZero/cpu_air_params.json",
-    );
+    generate_config::generate("program_public_input.json", "cpu_air_params.json");
 
     //run cpu_air_prover
     let mut command_proof = Command::new("cpu_air_prover");
