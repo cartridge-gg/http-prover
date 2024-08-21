@@ -1,4 +1,6 @@
-use clap::Parser;
+use std::str::FromStr;
+
+use clap::{Parser, ValueEnum};
 use prover_sdk::{Cairo0ProverInput, Cairo1ProverInput, ProverAccessKey, ProverSDK};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -22,16 +24,34 @@ pub enum ProveError {
     Prove(prover_sdk::ProverSdkErrors),
 }
 
+#[derive(Debug, Serialize, Deserialize, ValueEnum, Clone)]
+pub enum CairoVersion {
+    V0,
+    V1,
+}
+
+impl FromStr for CairoVersion {
+    type Err = String;
+
+    fn from_str(input: &str) -> Result<CairoVersion, Self::Err> {
+        match input {
+            "v0" => Ok(CairoVersion::V0),
+            "v1" => Ok(CairoVersion::V1),
+            _ => Err(format!("Invalid Cairo version: {}", input)),
+        }
+    }
+}
+
 #[derive(Parser, Debug, Serialize, Deserialize)]
 #[clap(author, version, about, long_about = None)]
 pub struct CliInput {
-    #[arg(short = 'k', long)]
+    #[arg(short, long, env)]
     pub key: String,
 
-    #[arg(short, long, default_value_t = 1)]
-    pub cairo_version: usize, // 0 or 1,
+    #[arg(short, long, env, default_value = "1")]
+    pub cairo_version: CairoVersion,
 
-    #[arg(short, long)]
+    #[arg(short, long, env)]
     pub url: Url,
 }
 
@@ -42,17 +62,16 @@ pub async fn prove(args: CliInput, input: String) -> Result<String, ProveError> 
         .map_err(ProveError::Initialize)?;
 
     let proof = match args.cairo_version {
-        0 => {
+        CairoVersion::V0 => {
             let input: Cairo0ProverInput =
                 serde_json::from_str(&input).map_err(ProveError::ParseInput)?;
             sdk.prove_cairo0(input).await.map_err(ProveError::Prove)?
         }
-        1 => {
+        CairoVersion::V1 => {
             let input: Cairo1ProverInput =
                 serde_json::from_str(&input).map_err(ProveError::ParseInput)?;
             sdk.prove_cairo(input).await.map_err(ProveError::Prove)?
         }
-        _ => panic!("Invalid cairo version"),
     };
 
     let proof_json: serde_json::Value =

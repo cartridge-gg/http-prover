@@ -13,7 +13,7 @@ async fn test_cairo1_fibonacci() -> Result<(), cairo_prove::ProveError> {
     let prover_url = Url::parse(&format!("http://localhost:{}", port)).unwrap();
     let args = CliInput {
         key: key.to_string(),
-        cairo_version: 1,
+        cairo_version: cairo_prove::CairoVersion::V1,
         url: prover_url,
     };
 
@@ -30,7 +30,7 @@ async fn test_cairo0_fibonacci() -> Result<(), cairo_prove::ProveError> {
     let prover_url = Url::parse(&format!("http://localhost:{}", port)).unwrap();
     let args = CliInput {
         key: key.to_string(),
-        cairo_version: 0,
+        cairo_version: cairo_prove::CairoVersion::V0,
         url: prover_url,
     };
     let prover_input = read_file(PathBuf::from("examples/cairo0/prover_input.json")).await?;
