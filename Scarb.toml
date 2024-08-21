@@ -1,0 +1,12 @@
+[workspace]
+members = ["examples/cairo"]
+
+[workspace.package]
+edition = "2024_07"
+version = "0.1.0"
+
+[workspace.dependencies]
+cairo_test = "2.7.1"
+
+[cairo]
+enable-gas = false
