@@ -4,8 +4,6 @@ members = [
     "bin/cairo-prove",
     "bin/keygen",
     "bin/register",
-    "crates/common",
-    "crates/utils",
     "prover",
     "prover-sdk",
     "cairo1-compile",
@@ -18,29 +16,36 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
-axum = { version = "0.7.5", features = ["http2", "macros", "multipart", "ws"] }
-bytes = "1.4.0"
-cairo-proof-parser = { git = "https://github.com/cartridge-gg/cairo-proof-parser.git" }
+axum = { version = "0.7.5", features = ["http2", "macros", "multipart"] }
+bytes = "1.7.1"
+cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo", tag = "v2.7.1", default-features = false }
+cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo", tag = "v2.7.1", default-features = false }
+cairo-proof-parser = { git = "https://github.com/cartridge-gg/cairo-proof-parser.git", rev = "8c5789d9afc7632e7747f48368c2f68dc273da2f" }
 chrono = "0.4.38"
-clap = { version = "4.5.4", features = ["derive", "env"] }
+clap = { version = "4.5.16", features = ["derive", "env"] }
 common = { path = "crates/common" }
-curve25519-dalek = "4.1.2"
+config-generator = { git = "https://github.com/piotr-stec/genereate-config.git", rev = "bdbaf09990f7b8fd7c836d666cfdb120753e3ec7" }
+curve25519-dalek = "4.1.3"
 ed25519-dalek = { version = "2.1.1", features = ["rand_core", "serde"] }
 http = "1.1.0"
-hyper-util = "0.1.3"
+hyper-util = "0.1.7"
 jsonwebtoken = "9.3.0"
-lazy_static = "1.4.0"
+lazy_static = "1.5.0"
 prefix-hex = "0.7.1"
 prover = { path = "prover" }
 prover-sdk = { path = "prover-sdk" }
 rand = "0.8.5"
-reqwest = { version = "0.12.4", features = ["blocking", "json", "rustls-tls"], default-features = false }
-reqwest_cookie_store = "0.7.0"
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.116"
-serde_with = "3.8.1"
-thiserror = "1.0.57"
-tokio = { version = "1.37.0", features = ["full"] }
+reqwest = { version = "0.12.7", features = [
+    "blocking",
+    "json",
+    "rustls-tls",
+], default-features = false }
+reqwest_cookie_store = "0.8.0"
+serde = { version = "1.0.208", features = ["derive"] }
+serde_json = "1.0.125"
+serde_with = "3.9.0"
+thiserror = "1.0.63"
+tokio = { version = "1.39.3", features = ["full"] }
 tower-http = { version = "0.5.2", features = [
     "limit",
     "timeout",
@@ -51,8 +56,5 @@ tower-http = { version = "0.5.2", features = [
 ] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-url = { version = "2.5.0", features = ["serde"] }
+url = { version = "2.5.2", features = ["serde"] }
 utils = { path = "crates/utils" }
-config-generator = { git = "https://github.com/piotr-stec/genereate-config.git" }
-cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo", tag = "v2.7.0-rc.3", default-features = false }
-cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo", tag = "v2.7.0-rc.3", default-features = false }

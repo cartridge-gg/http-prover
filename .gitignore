@@ -11,7 +11,7 @@
 **/*.rs.bk
 
 # MSVC Windows builds of rustc generate these, which store debugging information
-*.pdb
+**/*.pdb
 
 # Scarb
 **/Scarb.lock
@@ -20,17 +20,10 @@
 **/.vscode/
 
 # Git
-**/.git
+**/.git/
 
 # Envs
-**/*.cargo
+**/.cargo/
 
 # Venvs
-**/.venv
-
-/resources
-output.json
-examples/Cairo/prover_input.json
-examples/CairoZero/prover_input.json
-/corelib
-
+**/.venv/
