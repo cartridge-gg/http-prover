@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eux
+
 IMAGE_NAME="http_prover_test"
 CONTAINER_ENGINE="${CONTAINER_ENGINE:-podman}"
 PORT="${PORT:-3040}"
