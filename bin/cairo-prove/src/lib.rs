@@ -48,7 +48,7 @@ pub struct CliInput {
     #[arg(short, long, env)]
     pub key: String,
 
-    #[arg(short, long, env, default_value = "1")]
+    #[arg(short, long, env, default_value = "v1")]
     pub cairo_version: CairoVersion,
 
     #[arg(short, long, env)]
