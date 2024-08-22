@@ -40,7 +40,7 @@ pub async fn root(
             .collect::<Vec<String>>()
             .join(" ");
 
-        fs::write(program_input_path.clone(), output_str).await?;
+        fs::write(program_input_path.clone(), format!("[{output_str}]")).await?;
     } else {
         eprintln!("Expected a JSON array");
         std::process::exit(1);
