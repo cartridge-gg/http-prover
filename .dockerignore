@@ -28,6 +28,9 @@
 # Venvs
 **/.venv
 
+# Corelib
+**/corelib/
+
 # Docker
 **/Dockerfile
 
