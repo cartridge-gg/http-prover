@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eux
+
 IMAGE_NAME="http_prover_test"
 
 # Check if the image already exists
