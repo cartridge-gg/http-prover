@@ -19,6 +19,7 @@ fi
 
 $CONTAINER_ENGINE run -d --replace --name http_prover_test \
     -p $PORT:3000 localhost/http_prover_test \
+     -e PORT=$PORT \
     --jwt-secret-key "jwt" \
     --message-expiration-time 3600 \
     --session-expiration-time 3600 \
