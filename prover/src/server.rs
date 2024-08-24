@@ -1,10 +1,6 @@
 use crate::{
-    errors::ServerError,
-    job::{Job, JobStore},
-    prove,
-    temp_dir_middleware::TempDirHandle,
-    verifier::verify_proof,
-    Args,
+    errors::ServerError, job::JobStore, prove, temp_dir_middleware::TempDirHandle,
+    verifier::verify_proof, Args,
 };
 use axum::{
     extract::{Path, State},
