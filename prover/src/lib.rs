@@ -1,8 +1,9 @@
 pub mod errors;
+pub mod job;
 pub mod prove;
 pub mod server;
-pub mod verifier;
 pub mod temp_dir_middleware;
+pub mod verifier;
 use clap::{arg, Parser};
 
 #[derive(Parser, Debug)]
@@ -12,7 +13,7 @@ pub struct Args {
     pub host: String,
     #[arg(long, short, env, default_value = "3000")]
     pub port: u16,
-    #[arg(long, short, env,default_value = "3600")]
+    #[arg(long, short, env, default_value = "3600")]
     pub message_expiration_time: u32,
     #[arg(long, short, env, default_value = "3600")]
     pub session_expiration_time: u32,

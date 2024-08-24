@@ -1,13 +1,16 @@
-use std::{path::PathBuf, process::Command};
+use std::process::Command;
 
 use axum::{response::IntoResponse, Json};
 
 use crate::temp_dir_middleware::TempDirHandle;
 
-pub async fn verify_proof(TempDirHandle(_path):TempDirHandle,Json(proof): Json<String>,) -> impl IntoResponse {
+pub async fn verify_proof(
+    TempDirHandle(path): TempDirHandle,
+    Json(proof): Json<String>,
+) -> impl IntoResponse {
     // Define the path for the proof file
-
-    let file = PathBuf::from("proof");
+    let path = path.into_path();
+    let file = path.join("proof");
 
     // Write the proof string to the file
     if let Err(e) = std::fs::write(&file, proof) {
@@ -36,3 +39,4 @@ pub async fn verify_proof(TempDirHandle(_path):TempDirHandle,Json(proof): Json<S
         }
     }
 }
+//thread executor na tokio taskach
