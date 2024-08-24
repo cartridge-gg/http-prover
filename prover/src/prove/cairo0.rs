@@ -1,8 +1,6 @@
+use crate::extractors::workdir::TempDirHandle;
 use crate::job::JobStatus;
-use crate::{
-    job::{Job, JobStore},
-    temp_dir_middleware::TempDirHandle,
-};
+use crate::job::{Job, JobStore};
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use tempfile::TempDir;
 use tokio::time::sleep;
@@ -36,11 +34,11 @@ pub async fn root(
 
 pub async fn prove(job_id: u64, job_store: JobStore, dir: TempDir) {
     let mut jobs = job_store.lock().await;
-        if let Some(job) = jobs.iter_mut().find(|job| job.id == job_id) {
-            job.status = JobStatus::Running;
-        }
+    if let Some(job) = jobs.iter_mut().find(|job| job.id == job_id) {
+        job.status = JobStatus::Running;
+    }
     drop(jobs);
-     // Release lock after updating the status to Running
+    // Release lock after updating the status to Running
     let path = dir.into_path();
     // Perform async work
     sleep(tokio::time::Duration::from_secs(20)).await;

@@ -1,42 +1,74 @@
+use crate::{
+    extractors::workdir::TempDirHandle,
+    job::{create_job, update_job_status, JobStatus, JobStore},
+};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use std::process::Command;
+use tempfile::TempDir;
 
-use axum::{response::IntoResponse, Json};
-
-use crate::temp_dir_middleware::TempDirHandle;
-
-pub async fn verify_proof(
-    TempDirHandle(path): TempDirHandle,
+pub async fn root(
+    State(job_store): State<JobStore>,
+    TempDirHandle(dir): TempDirHandle,
     Json(proof): Json<String>,
 ) -> impl IntoResponse {
+    let job_id = create_job(&job_store).await;
+
+    tokio::spawn({
+        let job_store = job_store.clone();
+        async move {
+            if let Err(e) = verify_proof(job_id, job_store.clone(), dir, proof).await {
+                update_job_status(job_id, &job_store, JobStatus::Failed, Some(e)).await;
+            }
+        }
+    });
+
+    (
+        StatusCode::ACCEPTED,
+        format!("Task started, job id: {}", job_id),
+    )
+}
+
+pub async fn verify_proof(
+    job_id: u64,
+    job_store: JobStore,
+    dir: TempDir,
+    proof: String,
+) -> Result<(), String> {
+    update_job_status(job_id, &job_store, JobStatus::Running, None).await;
+
     // Define the path for the proof file
-    let path = path.into_path();
+    let path = dir.into_path();
     let file = path.join("proof");
 
     // Write the proof string to the file
-    if let Err(e) = std::fs::write(&file, proof) {
-        eprintln!("Failed to write proof to file: {}", e);
-        return Json(false);
-    }
+    std::fs::write(&file, &proof).map_err(|e| format!("Failed to write proof to file: {}", e))?;
 
     // Create the command to run the verifier
     let mut command = Command::new("cpu_air_verifier");
     command.arg("--in_file").arg(&file);
 
     // Execute the command and capture the status
-    let status = command.status();
+    let status = command
+        .status()
+        .map_err(|e| format!("Failed to execute verifier: {}", e))?;
 
     // Remove the proof file
-    if let Err(e) = std::fs::remove_file(&file) {
-        eprintln!("Failed to remove proof file: {}", e);
-    }
+    std::fs::remove_file(&file).map_err(|e| format!("Failed to remove proof file: {}", e))?;
 
     // Check if the command was successful
-    match status {
-        Ok(exit_status) => Json(exit_status.success()),
-        Err(e) => {
-            eprintln!("Failed to execute verifier: {}", e);
-            Json(false)
-        }
+    if status.success() {
+        update_job_status(
+            job_id,
+            &job_store,
+            JobStatus::Completed,
+            Some(format!(
+                "Proof verified successfully, exit status: {}",
+                status
+            )),
+        )
+        .await;
+        Ok(())
+    } else {
+        Err(format!("Verifier failed with exit status: {}", status))
     }
 }
-//thread executor na tokio taskach

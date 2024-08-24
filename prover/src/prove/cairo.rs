@@ -1,8 +1,6 @@
+use crate::extractors::workdir::TempDirHandle;
 use crate::job::JobStatus;
-use crate::{
-    job::{Job, JobStore},
-    temp_dir_middleware::TempDirHandle,
-};
+use crate::job::{Job, JobStore};
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use tempfile::TempDir;
 use tokio::time::sleep;

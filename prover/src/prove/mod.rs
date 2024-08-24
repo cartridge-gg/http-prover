@@ -1,8 +1,8 @@
 use axum::{routing::post, Router};
 
 use crate::job::JobStore;
-mod cairo0;
 mod cairo;
+mod cairo0;
 
 pub fn router(job_store: JobStore) -> Router {
     Router::new()

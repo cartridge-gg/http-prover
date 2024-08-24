@@ -1,8 +1,8 @@
 pub mod errors;
+pub mod extractors;
 pub mod job;
 pub mod prove;
 pub mod server;
-pub mod temp_dir_middleware;
 pub mod verifier;
 use clap::{arg, Parser};
 
