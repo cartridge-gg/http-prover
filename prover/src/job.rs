@@ -7,6 +7,8 @@ use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+use crate::server::AppState;
+
 #[derive(Serialize, Clone)]
 pub enum JobStatus {
     Pending,
@@ -52,8 +54,9 @@ pub async fn update_job_status(
 }
 pub async fn check_job_state_by_id(
     Path(id): Path<u64>,
-    State(job_store): State<JobStore>,
+    State(app_state): State<AppState>,
 ) -> impl IntoResponse {
+    let job_store = &app_state.job_store;
     let jobs = job_store.lock().await;
     if let Some(job) = jobs.iter().find(|job| job.id == id) {
         (StatusCode::OK, serde_json::to_string(job).unwrap())

@@ -1,18 +1,18 @@
 use crate::{
     extractors::workdir::TempDirHandle,
-    job::{create_job, update_job_status, JobStatus, JobStore},
+    job::{create_job, update_job_status, JobStatus, JobStore}, server::AppState,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use std::process::Command;
 use tempfile::TempDir;
 
 pub async fn root(
-    State(job_store): State<JobStore>,
+    State(app_state): State<AppState>,
     TempDirHandle(dir): TempDirHandle,
     Json(proof): Json<String>,
 ) -> impl IntoResponse {
-    let job_id = create_job(&job_store).await;
-
+    let job_id = create_job(&app_state.job_store).await;
+    let job_store = app_state.job_store.clone();
     tokio::spawn({
         async move {
             if let Err(e) = verify_proof(job_id, job_store.clone(), dir, proof).await {

@@ -1,13 +1,15 @@
 use crate::extractors::workdir::TempDirHandle;
 use crate::job::{create_job, update_job_status, JobStatus, JobStore};
+use crate::server::AppState;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use tempfile::TempDir;
 use tokio::time::sleep;
 
 pub async fn root(
-    State(job_store): State<JobStore>,
+    State(app_state): State<AppState>,
     TempDirHandle(path): TempDirHandle,
 ) -> impl IntoResponse {
+    let job_store = app_state.job_store.clone();
     let job_id = create_job(&job_store).await;
     tokio::spawn({
         async move {
