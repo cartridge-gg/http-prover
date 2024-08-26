@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 use crate::ProverInput;
@@ -5,7 +7,7 @@ use crate::ProverInput;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CairoProverInput {
     pub program: CairoCompiledProgram,
-    pub program_input: serde_json::Value,
+    pub program_input_path: PathBuf,
     pub layout: String,
 }
 impl ProverInput for CairoProverInput {

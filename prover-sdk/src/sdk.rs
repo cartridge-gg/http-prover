@@ -13,7 +13,7 @@ pub struct ProverSDK {
 }
 
 impl ProverSDK {
-    pub async fn new(url: Url) -> Result<Self, SdkErrors> {
+    pub fn new(url: Url) -> Result<Self, SdkErrors> {
         let client = Client::new();
         let prover_cairo0 = url.join("/prove/cairo0")?;
         let prover_cairo = url.join("/prove/cairo")?;

@@ -4,7 +4,7 @@ use crate::ProverInput;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cairo0ProverInput {
-    pub program: CompiledProgram,
+    pub program: Cairo0CompiledProgram,
     pub program_input: serde_json::Value,
     pub layout: String,
 }
@@ -16,7 +16,7 @@ impl ProverInput for Cairo0ProverInput {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct CompiledProgram {
+pub struct Cairo0CompiledProgram {
     pub attributes: Vec<String>,
     pub builtins: Vec<String>,
     pub compiler_version: String,
@@ -94,8 +94,8 @@ mod tests {
         }
     }"#;
 
-        let compiled_program = serde_json::from_str::<CompiledProgram>(input)?;
-        let expected = CompiledProgram {
+        let compiled_program = serde_json::from_str::<Cairo0CompiledProgram>(input)?;
+        let expected = Cairo0CompiledProgram {
             attributes: vec![],
             builtins: vec!["output".to_string(), "pedersen".to_string()],
             compiler_version: "0.13.1".to_string(),
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn test_serialize_compiled_program() -> serde_json::Result<()> {
-        let input = CompiledProgram {
+        let input = Cairo0CompiledProgram {
             attributes: vec![],
             builtins: vec!["output".to_string(), "pedersen".to_string()],
             compiler_version: "0.13.1".to_string(),
@@ -223,7 +223,7 @@ mod tests {
 
     #[test]
     fn test_serialize_prove_input() -> serde_json::Result<()> {
-        let compiled_program = CompiledProgram {
+        let compiled_program = Cairo0CompiledProgram {
             attributes: vec![],
             builtins: vec!["output".to_string(), "pedersen".to_string()],
             compiler_version: "0.13.1".to_string(),

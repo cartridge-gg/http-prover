@@ -43,7 +43,7 @@ pub async fn prove(
     update_job_status(job_id, &job_store, JobStatus::Running, None).await;
 
     let path = dir.into_path();
-    let program_input_path: PathBuf = path.join("input.json");
+    let program_input_path: PathBuf = program_input.program_input_path;
     let program_path: PathBuf = path.join("program.json");
     let proof_path: PathBuf = path.join("program_proof_cairo.json");
     let trace_file = path.join("program_trace.trace");
@@ -52,10 +52,8 @@ pub async fn prove(
     let private_input_file = path.join("program_private_input.json");
     let params_file = path.join("cpu_air_params.json");
     let config_file = PathBuf::from_str("config/cpu_air_prover_config.json")?;
-    let input = serde_json::to_string(&program_input.program_input)?;
     let program = serde_json::to_string(&program_input.program)?;
     let layout = program_input.layout;
-    fs::write(&program_input_path, input.clone()).await?;
     fs::write(&program_path, program.clone()).await?;
     let mut command = Command::new("cairo1-run");
     command

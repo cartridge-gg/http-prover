@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["prover", "common", "prover-sdk"]
+members = ["prover", "common", "prover-sdk","bin/cairo-prove"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
@@ -15,5 +15,6 @@ serde_json = "1.0.127"
 tempfile = "3.12.0"
 serde = { version = "1.0.209", features = ["derive"] }
 common = { path = "common" }
+prover-sdk = { path = "prover-sdk" }
 reqwest = {version = "0.12.7", features = ["blocking", "json", "rustls-tls"], default-features = false }
 url = "2.5.2"
