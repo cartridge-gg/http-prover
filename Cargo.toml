@@ -1,7 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-    "prover"
+    "prover",
+    "common"
 ]
 [workspace.package]
 version = "0.1.0"
@@ -16,3 +17,4 @@ thiserror = "1.0.37"
 serde_json = "1.0.116"
 tempfile = "3.12.0"
 serde = { version = "1.0.209", features = ["derive"] }
+common = { path = "common" }

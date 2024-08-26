@@ -19,4 +19,8 @@ pub enum ProverError{
     CairoProofFailed,
     #[error("Failed to update job status")]
     UpdateJobStatusFailed,
+    #[error("failed to parse result")]
+    Parse(#[from] serde_json::Error),
+    #[error("File read error")]
+    FileWriteError(#[from] std::io::Error),
 }
