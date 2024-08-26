@@ -14,7 +14,6 @@ pub async fn root(
     let job_id = create_job(&job_store).await;
 
     tokio::spawn({
-        let job_store = job_store.clone();
         async move {
             if let Err(e) = verify_proof(job_id, job_store.clone(), dir, proof).await {
                 update_job_status(job_id, &job_store, JobStatus::Failed, Some(e)).await;
