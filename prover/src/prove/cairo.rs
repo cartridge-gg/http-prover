@@ -51,8 +51,7 @@ pub async fn prove(
     let public_input_file = path.join("program_public_input.json");
     let private_input_file = path.join("program_private_input.json");
     let params_file = path.join("cpu_air_params.json");
-    let config_file = PathBuf::from_str("config/cpu_air_prover_config.json")
-        .map_err(|_| ProverError::ConfigMissing)?;
+    let config_file = PathBuf::from_str("config/cpu_air_prover_config.json")?;
     let input = serde_json::to_string(&program_input.program_input)?;
     let program = serde_json::to_string(&program_input.program)?;
     let layout = program_input.layout;

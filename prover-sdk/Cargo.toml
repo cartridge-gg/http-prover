@@ -1,0 +1,11 @@
+[package]
+name = "prover-sdk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest.workspace = true
+url.workspace = true
+thiserror.workspace = true
+common.workspace = true
+tracing.workspace = true

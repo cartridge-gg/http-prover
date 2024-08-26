@@ -1,10 +1,10 @@
+pub mod config;
 pub mod errors;
 pub mod extractors;
 pub mod job;
 pub mod prove;
 pub mod server;
 pub mod verifier;
-pub mod config;
 use clap::{arg, Parser};
 
 #[derive(Parser, Debug)]
