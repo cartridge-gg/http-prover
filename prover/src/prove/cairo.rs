@@ -9,6 +9,7 @@ use crate::server::AppState;
 use axum::Json;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use common::cairo_prover_input::CairoProverInput;
+use serde_json::Value;
 use std::process::Command;
 use tempfile::TempDir;
 use tokio::fs;
@@ -99,13 +100,15 @@ pub async fn prove(
     let status_proof = child_proof
         .wait()
         .map_err(|_| ProverError::CairoProofFailed)?;
-
+    let result = fs::read_to_string(&proof_path).await?;
+    let proof: Value = serde_json::from_str(&result)?;
+    let final_result = serde_json::to_string_pretty(&proof)?;
     if status_proof.success() {
         update_job_status(
             job_id,
             &job_store,
             JobStatus::Completed,
-            Some(format!("Proof generated, workdir: {}", path.display())),
+            Some(format!("{}", final_result)),
         )
         .await;
     }
