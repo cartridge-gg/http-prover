@@ -1,5 +1,5 @@
 use crate::extractors::workdir::TempDirHandle;
-use crate::job::check_job_state_by_id;
+use crate::job::get_job;
 use crate::verifier::root;
 use crate::{errors::ServerError, job::JobStore, prove, Args};
 
@@ -33,7 +33,7 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
     let app = Router::new()
         .route("/verify", post(root))
         .with_state(app_state.clone())
-        .route("/job-status/:id", get(check_job_state_by_id))
+        .route("/get-job/:id", get(get_job))
         .with_state(app_state.clone())
         .nest("/prove", prove::router(app_state))
         .layer(middleware::from_extractor::<TempDirHandle>());

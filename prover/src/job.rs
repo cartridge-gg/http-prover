@@ -2,6 +2,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
+    Json,
 };
 use serde::Serialize;
 use std::sync::Arc;
@@ -24,6 +25,13 @@ pub struct Job {
     pub result: Option<String>, // You can change this to any type based on your use case
 }
 
+#[derive(Serialize)]
+#[serde(untagged)]
+pub enum JobResponse {
+    InProgress { id: u64, status: JobStatus },
+    Completed { result: String,status: JobStatus },
+    Failed { error: String },
+}
 pub type JobStore = Arc<Mutex<Vec<Job>>>;
 
 pub async fn create_job(job_store: &JobStore) -> u64 {
@@ -52,18 +60,44 @@ pub async fn update_job_status(
     }
     drop(jobs);
 }
-pub async fn check_job_state_by_id(
-    Path(id): Path<u64>,
-    State(app_state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn get_job(Path(id): Path<u64>, State(app_state): State<AppState>) -> impl IntoResponse {
     let job_store = &app_state.job_store;
     let jobs = job_store.lock().await;
     if let Some(job) = jobs.iter().find(|job| job.id == id) {
-        (StatusCode::OK, serde_json::to_string(job).unwrap())
+        let (status, response) = match job.status {
+            JobStatus::Pending | JobStatus::Running => (
+                StatusCode::OK,
+                Json(JobResponse::InProgress {
+                    id: job.id,
+                    status: job.status.clone(),
+                }),
+            ),
+            JobStatus::Completed => (
+                StatusCode::OK,
+                Json(JobResponse::Completed {
+                    status: job.status.clone(),
+                    result: job
+                        .result
+                        .clone()
+                        .unwrap_or_else(|| "No result available".to_string()),
+                }),
+            ),
+            JobStatus::Failed => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(JobResponse::Failed {
+                    error: job
+                        .result
+                        .clone()
+                        .unwrap_or_else(|| "Unknown error".to_string()),
+                }),
+            ),
+        };
+        (status, response).into_response()
     } else {
         (
             StatusCode::NOT_FOUND,
-            format!("Job with id {} not found", id),
+            Json(format!("Job with id {} not found", id)),
         )
+            .into_response()
     }
 }

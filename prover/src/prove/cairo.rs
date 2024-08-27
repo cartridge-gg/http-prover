@@ -9,7 +9,7 @@ use crate::server::AppState;
 use axum::Json;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use common::cairo_prover_input::CairoProverInput;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::process::Command;
 use tempfile::TempDir;
 use tokio::fs;
@@ -28,10 +28,10 @@ pub async fn root(
             };
         }
     });
-    (
-        StatusCode::ACCEPTED,
-        format!("Task started, job id: {}", job_id),
-    )
+    let body = json!({
+        "job_id": job_id
+    });
+    (StatusCode::ACCEPTED, body.to_string())
 }
 
 pub async fn prove(
@@ -72,8 +72,8 @@ pub async fn prove(
         .arg(&program_input_path)
         .arg(&program_path);
 
-    let mut child = command.spawn().map_err(|_| ProverError::CairoRunFailed)?;
-    let _status = child.wait().map_err(|_| ProverError::CairoRunFailed)?;
+    let mut child = command.spawn()?;
+    let _status = child.wait()?;
 
     generate(public_input_file.clone(), params_file.clone());
 
@@ -92,11 +92,9 @@ pub async fn prove(
         .arg("-generate-annotations");
 
     let mut child_proof = command_proof
-        .spawn()
-        .map_err(|_| ProverError::CairoProofFailed)?;
+        .spawn()?;
     let status_proof = child_proof
-        .wait()
-        .map_err(|_| ProverError::CairoProofFailed)?;
+        .wait()?;
     let result = fs::read_to_string(&proof_path).await?;
     let proof: Value = serde_json::from_str(&result)?;
     let final_result = serde_json::to_string_pretty(&proof)?;

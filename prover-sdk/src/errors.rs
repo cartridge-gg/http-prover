@@ -8,4 +8,6 @@ pub enum SdkErrors {
     UrlParseError(#[from] url::ParseError),
     #[error("Prover response error: {0}")]
     ProveResponseError(String),
+    #[error("Get Job response error: {0}")]
+    GetJobResponseError(String),
 }

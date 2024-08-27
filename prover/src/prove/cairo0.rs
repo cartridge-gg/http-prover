@@ -1,7 +1,3 @@
-use std::path::PathBuf;
-use std::process::Command;
-use std::str::FromStr;
-
 use crate::config::generate;
 use crate::errors::ProverError;
 use crate::extractors::workdir::TempDirHandle;
@@ -10,7 +6,11 @@ use crate::server::AppState;
 use axum::Json;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use common::cairo0_prover_input::Cairo0ProverInput;
+use serde_json::json;
 use serde_json::Value;
+use std::path::PathBuf;
+use std::process::Command;
+use std::str::FromStr;
 use tempfile::TempDir;
 use tokio::fs;
 
@@ -28,10 +28,12 @@ pub async fn root(
             };
         }
     });
-    (
-        StatusCode::ACCEPTED,
-        format!("Task started, job id: {}", job_id),
-    )
+
+    let body = json!({
+        "message": "Task started",
+        "job_id": job_id
+    });
+    (StatusCode::ACCEPTED, body.to_string())
 }
 
 pub async fn prove(
