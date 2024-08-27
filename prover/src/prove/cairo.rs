@@ -1,18 +1,10 @@
-use std::path::PathBuf;
-use std::str::FromStr;
-
-use crate::config::generate;
-use crate::errors::ProverError;
 use crate::extractors::workdir::TempDirHandle;
-use crate::job::{create_job, update_job_status, JobStatus, JobStore};
+use crate::job::create_job;
 use crate::server::AppState;
 use axum::Json;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use common::cairo_prover_input::CairoProverInput;
-use serde_json::{json, Value};
-use std::process::Command;
-use tempfile::TempDir;
-use tokio::fs;
+use serde_json::json;
 
 pub async fn root(
     State(app_state): State<AppState>,

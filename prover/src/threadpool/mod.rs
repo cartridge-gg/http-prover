@@ -1,37 +1,24 @@
 use common::cairo_prover_input::CairoProverInput;
-use tokio::{
-    process::Command, spawn, sync::{mpsc, Mutex}, task::JoinHandle
-};
+use serde_json::Value;
+use tracing::trace;
+use std::fs;
+use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::Arc;
 use tempfile::TempDir;
-use std::path::PathBuf;
-use std::fs; 
-use serde_json::Value;
-use std::str::FromStr;
+use tokio::{
+    process::Command,
+    spawn,
+    sync::{mpsc, Mutex},
+    task::JoinHandle,
+};
 
-use crate::{config::generate, job::{update_job_status, JobStore}};
+use crate::{
+    config::generate, errors::ProverError, job::{update_job_status, JobStore}
+};
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: Option<mpsc::Sender<(u64, JobStore, TempDir, CairoProverInput)>>,
-}
-
-#[derive(Debug)]
-pub enum ProverError {
-    IOError(std::io::Error),
-    CommandError(std::io::Error),
-    JsonError(serde_json::Error),
-}
-
-impl From<std::io::Error> for ProverError {
-    fn from(err: std::io::Error) -> ProverError {
-        ProverError::IOError(err)
-    }
-}
-
-impl From<serde_json::Error> for ProverError {
-    fn from(err: serde_json::Error) -> ProverError {
-        ProverError::JsonError(err)
-    }
 }
 
 impl ThreadPool {
@@ -83,34 +70,35 @@ impl ThreadPool {
 }
 
 struct Worker {
-    id: usize,
+    _id: usize,
     thread: Option<JoinHandle<()>>,
 }
 
 impl Worker {
-    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<(u64, JobStore, TempDir, CairoProverInput)>>>)
-        -> Worker
-    {
+    fn new(
+        id: usize,
+        receiver: Arc<Mutex<mpsc::Receiver<(u64, JobStore, TempDir, CairoProverInput)>>>,
+    ) -> Worker {
         let thread = spawn(async move {
             loop {
                 let message = receiver.lock().await.recv().await;
                 match message {
                     Some((job_id, job_store, dir, program_input)) => {
-                        println!("Worker {id} got a job; executing.");
+                        trace!("Worker {id} got a job; executing.");
 
                         if let Err(e) = Worker::prove(job_id, job_store, dir, program_input).await {
                             eprintln!("Worker {id} encountered an error: {:?}", e);
                         }
 
-                        println!("Worker {id} finished the job.");
+                        trace!("Worker {id} finished the job.");
                     }
                     None => break,
-                }            
-        }
+                }
+            }
         });
 
         Worker {
-            id,
+            _id: id,
             thread: Some(thread),
         }
     }
@@ -135,7 +123,7 @@ impl Worker {
         let program = serde_json::to_string(&program_input.program)?;
         let layout = program_input.layout;
         fs::write(&program_path, program.clone())?;
-        
+
         let mut command = Command::new("cairo1-run");
         command
             .arg("--trace_file")
@@ -177,37 +165,23 @@ impl Worker {
         let result = fs::read_to_string(&proof_path)?;
         let proof: Value = serde_json::from_str(&result)?;
         let final_result = serde_json::to_string_pretty(&proof)?;
-        if status_proof.success(){
-            update_job_status(job_id, &job_store, crate::job::JobStatus::Completed, Some(final_result)).await;
-        }else {
-            update_job_status(job_id, &job_store, crate::job::JobStatus::Failed, Some(final_result)).await;
+        if status_proof.success() {
+            update_job_status(
+                job_id,
+                &job_store,
+                crate::job::JobStatus::Completed,
+                Some(final_result),
+            )
+            .await;
+        } else {
+            update_job_status(
+                job_id,
+                &job_store,
+                crate::job::JobStatus::Failed,
+                Some(final_result),
+            )
+            .await;
         }
         Ok(())
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use tempfile::TempDir;
-//     use serde_json::json;
-
-//     #[tokio::test]
-//     async fn test_threadpool() {
-//         let mut pool = ThreadPool::new(4);
-
-//         for i in 0..8 {
-//             let job_store = Arc::new(Mutex::new(JobStore)); // Replace with actual job store creation.
-//             let dir = TempDir::new().unwrap();
-//             let program_input = CairoProverInput {
-//                 program_input_path: PathBuf::new(),
-//                 program: json!({"mock": "data"}),
-//                 layout: String::from("small"),
-//             };
-
-//             pool.execute(i, job_store.clone(), dir, program_input).await;
-//         }
-
-//         pool.shutdown().await;
-//     }
-// }
