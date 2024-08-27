@@ -19,6 +19,7 @@ pub async fn root(
     TempDirHandle(path): TempDirHandle,
     Json(program_input): Json<Cairo0ProverInput>,
 ) -> impl IntoResponse {
+    
     let job_store = app_state.job_store.clone();
     let job_id = create_job(&job_store).await;
     tokio::spawn({

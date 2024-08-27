@@ -5,6 +5,7 @@ pub mod job;
 pub mod prove;
 pub mod server;
 pub mod verifier;
+pub mod threadpool;
 use clap::{arg, Parser};
 
 #[derive(Parser, Debug)]

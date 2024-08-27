@@ -1,5 +1,6 @@
 use crate::extractors::workdir::TempDirHandle;
 use crate::job::get_job;
+use crate::threadpool::ThreadPool;
 use crate::verifier::root;
 use crate::{errors::ServerError, job::JobStore, prove, Args};
 
@@ -17,6 +18,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 #[derive(Clone)]
 pub struct AppState {
     pub job_store: JobStore,
+    pub thread_pool: Arc<Mutex<ThreadPool>>,
 }
 pub async fn start(args: Args) -> Result<(), ServerError> {
     tracing_subscriber::registry()
@@ -29,6 +31,7 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
     let job_store: JobStore = Arc::new(Mutex::new(Vec::new()));
     let app_state = AppState {
         job_store: job_store,
+        thread_pool: Arc::new(Mutex::new(ThreadPool::new(2))),
     };
     let app = Router::new()
         .route("/verify", post(root))
