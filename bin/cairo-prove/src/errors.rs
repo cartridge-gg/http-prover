@@ -1,4 +1,5 @@
 use thiserror::Error;
+use reqwest::Error as ReqwestError;
 
 #[derive(Debug, Error)]
 pub enum ProveErrors {
@@ -14,4 +15,6 @@ pub enum ProveErrors {
     MissingProgramInput,
     #[error(transparent)]
     Parse(#[from] serde_json::Error),
+    #[error(transparent)]
+    RequestFailed(#[from] ReqwestError),
 }

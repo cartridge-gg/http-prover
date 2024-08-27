@@ -237,6 +237,7 @@ dependencies = [
  "clap",
  "common",
  "prover-sdk",
+ "reqwest",
  "serde",
  "serde_json",
  "thiserror",
