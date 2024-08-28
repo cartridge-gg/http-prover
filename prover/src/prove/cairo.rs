@@ -16,7 +16,7 @@ pub async fn root(
     let job_store = app_state.job_store.clone();
     let job_id = create_job(&job_store).await;
     let thread = thread_pool.lock().await;
-    thread.execute(job_id, job_store, path, CairoVersionedInput::Cairo(program_input)).await.unwrap();
+    thread.execute(job_id, job_store, path, CairoVersionedInput::Cairo(program_input)).await.into_response();
     let body = json!({
         "job_id": job_id
     });

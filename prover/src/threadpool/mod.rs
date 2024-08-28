@@ -46,11 +46,9 @@ impl ThreadPool {
         program_input: CairoVersionedInput,
     ) -> Result<(), ProverError> {
         self.sender
-            .as_ref()
-            .unwrap()
+            .as_ref().ok_or(ProverError::CustomError("Thread pool is shutdown".to_string()))?
             .send((job_id, job_store, dir, program_input))
-            .await
-            .unwrap();
+            .await?;
         Ok(())
     }
 

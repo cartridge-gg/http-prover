@@ -23,7 +23,7 @@ pub async fn root(
             path,
             CairoVersionedInput::Cairo0(program_input),
         )
-        .await.unwrap();
+        .await.into_response();
     let body = json!({
         "job_id": job_id
     });

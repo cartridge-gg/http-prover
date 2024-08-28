@@ -25,7 +25,7 @@ pub async fn prove(
     let public_input_file = path.join("program_public_input.json");
     let private_input_file = path.join("program_private_input.json");
     let params_file = path.join("cpu_air_params.json");
-    let config_file = PathBuf::from_str("config/cpu_air_prover_config.json").unwrap();
+    let config_file = PathBuf::from_str("config/cpu_air_prover_config.json")?;
     match program_input {
         CairoVersionedInput::Cairo(input) => {
             let program_input_path: PathBuf = input.program_input_path;
