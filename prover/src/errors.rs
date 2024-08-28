@@ -23,4 +23,6 @@ pub enum ProverError {
     FileWriteError(#[from] std::io::Error),
     #[error(transparent)]
     InfallibleError(#[from] Infallible),
+    #[error("{0}")]
+    CustomError(String),
 }

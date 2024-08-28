@@ -1,4 +1,4 @@
-use crate::{errors::ProverError, threadpool::prove::prove};
+use crate::{errors::ProverError, threadpool::prove::prove, utils::job::JobStore};
 use common::{cairo0_prover_input::Cairo0ProverInput, cairo_prover_input::CairoProverInput};
 use std::sync::Arc;
 use tempfile::TempDir;
@@ -9,7 +9,6 @@ use tokio::{
 };
 use tracing::trace;
 pub mod prove;
-use crate::job::JobStore;
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: Option<mpsc::Sender<(u64, JobStore, TempDir, CairoVersionedInput)>>,
@@ -45,24 +44,31 @@ impl ThreadPool {
         job_store: JobStore,
         dir: TempDir,
         program_input: CairoVersionedInput,
-    )-> Result<(), ProverError> {
+    ) -> Result<(), ProverError> {
         self.sender
             .as_ref()
             .unwrap()
             .send((job_id, job_store, dir, program_input))
-            .await.unwrap();
-        Ok(())}
+            .await
+            .unwrap();
+        Ok(())
+    }
 
     pub async fn shutdown(&mut self) -> Result<(), ProverError> {
         if let Some(sender) = self.sender.take() {
-            drop(sender);
+            drop(sender); // Dropping the sender signals that no more messages will be sent
         }
 
+        // Wait for each worker to finish its current task
         for worker in &mut self.workers {
             if let Some(handle) = worker.thread.take() {
-                handle.await.unwrap();
+                if let Err(e) = handle.await {
+                    eprintln!("Error waiting for worker: {:?}", e);
+                    return Err(ProverError::CustomError(format!("Worker error: {:?}", e)));
+                }
             }
         }
+
         Ok(())
     }
 }
@@ -90,7 +96,9 @@ impl Worker {
 
                         trace!("Worker {id} finished the job.");
                     }
-                    None => break,
+                    None => {
+                        trace!("Worker {id} detected shutdown signal.");
+                        break;},
                 }
             }
         });

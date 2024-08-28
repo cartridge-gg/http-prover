@@ -5,9 +5,8 @@ use std::str::FromStr;
 use tempfile::TempDir;
 use tokio::process::Command;
 
-use crate::config::generate;
+use crate::utils::{config::generate,job::{update_job_status, JobStatus, JobStore}};
 use crate::errors::ProverError;
-use crate::job::{update_job_status, JobStore};
 
 use super::CairoVersionedInput;
 
@@ -17,7 +16,7 @@ pub async fn prove(
     dir: TempDir,
     program_input: CairoVersionedInput,
 ) -> Result<(), ProverError> {
-    update_job_status(job_id, &job_store, crate::job::JobStatus::Running, None).await;
+    update_job_status(job_id, &job_store, JobStatus::Running, None).await;
     let path = dir.into_path();
     let program_path: PathBuf = path.join("program.json");
     let proof_path: PathBuf = path.join("program_proof_cairo.json");
@@ -88,7 +87,7 @@ pub async fn prove(
         update_job_status(
             job_id,
             &job_store,
-            crate::job::JobStatus::Completed,
+            JobStatus::Completed,
             Some(final_result),
         )
         .await;
@@ -96,7 +95,7 @@ pub async fn prove(
         update_job_status(
             job_id,
             &job_store,
-            crate::job::JobStatus::Failed,
+            JobStatus::Failed,
             Some(final_result),
         )
         .await;

@@ -1,6 +1,6 @@
 use crate::{
     extractors::workdir::TempDirHandle,
-    job::{create_job, update_job_status, JobStatus, JobStore},
+    utils::job::{create_job, update_job_status, JobStatus, JobStore},
     server::AppState,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};

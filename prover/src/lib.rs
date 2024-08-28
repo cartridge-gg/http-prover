@@ -1,7 +1,6 @@
-pub mod config;
+pub mod utils;
 pub mod errors;
 pub mod extractors;
-pub mod job;
 pub mod prove;
 pub mod server;
 pub mod verifier;

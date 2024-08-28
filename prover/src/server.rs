@@ -1,8 +1,9 @@
 use crate::extractors::workdir::TempDirHandle;
-use crate::job::get_job;
 use crate::threadpool::ThreadPool;
+use crate::utils::job::{get_job, JobStore};
+use crate::utils::shutdown::shutdown_signal;
 use crate::verifier::root;
-use crate::{errors::ServerError, job::JobStore, prove, Args};
+use crate::{errors::ServerError, prove, Args};
 
 use axum::{
     middleware,
@@ -28,23 +29,30 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
-    let job_store: JobStore = Arc::new(Mutex::new(Vec::new()));
+
     let app_state = AppState {
-        job_store: job_store,
+        job_store: Arc::new(Mutex::new(Vec::new())),
         thread_pool: Arc::new(Mutex::new(ThreadPool::new(2))),
     };
+
     let app = Router::new()
         .route("/verify", post(root))
-        .with_state(app_state.clone())
         .route("/get-job/:id", get(get_job))
         .with_state(app_state.clone())
-        .nest("/prove", prove::router(app_state))
+        .nest("/prove", prove::router(app_state.clone()))
         .layer(middleware::from_extractor::<TempDirHandle>());
+
     let address: SocketAddr = format!("{}:{}", args.host, args.port)
         .parse()
         .map_err(ServerError::AddressParse)?;
+    
     let listener = TcpListener::bind(address).await?;
+
     trace!("Listening on {}", address);
-    serve(listener, app).await?;
+
+    serve(listener, app)
+    .with_graceful_shutdown(shutdown_signal(app_state.thread_pool))
+    .await?;
+    
     Ok(())
 }

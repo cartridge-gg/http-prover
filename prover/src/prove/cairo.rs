@@ -1,7 +1,7 @@
 use crate::extractors::workdir::TempDirHandle;
-use crate::job::create_job;
 use crate::server::AppState;
 use crate::threadpool::CairoVersionedInput;
+use crate::utils::job::create_job;
 use axum::Json;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use common::cairo_prover_input::CairoProverInput;
