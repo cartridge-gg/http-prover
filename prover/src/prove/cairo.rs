@@ -1,6 +1,7 @@
 use crate::extractors::workdir::TempDirHandle;
 use crate::job::create_job;
 use crate::server::AppState;
+use crate::threadpool::CairoVersionedInput;
 use axum::Json;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use common::cairo_prover_input::CairoProverInput;
@@ -15,7 +16,7 @@ pub async fn root(
     let job_store = app_state.job_store.clone();
     let job_id = create_job(&job_store).await;
     let thread = thread_pool.lock().await;
-    thread.execute(job_id, job_store, path, program_input).await;
+    thread.execute(job_id, job_store, path, CairoVersionedInput::Cairo(program_input)).await.unwrap();
     let body = json!({
         "job_id": job_id
     });

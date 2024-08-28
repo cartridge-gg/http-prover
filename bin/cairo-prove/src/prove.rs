@@ -6,7 +6,6 @@ use common::{
     cairo_prover_input::{CairoCompiledProgram, CairoProverInput},
 };
 use prover_sdk::sdk::ProverSDK;
-use serde_json::Value;
 
 pub async fn prove(args: Args, sdk: ProverSDK) -> Result<String, ProveErrors> {
     let program = std::fs::read_to_string(&args.program_path)?;
@@ -16,7 +15,7 @@ pub async fn prove(args: Args, sdk: ProverSDK) -> Result<String, ProveErrors> {
             let data = Cairo0ProverInput {
                 program: program_serialized,
                 layout: args.layout,
-                program_input: Value::default(),
+                program_input_path: args.program_input_path.unwrap(),
             };
             sdk.prove_cairo0(data).await?
         }
