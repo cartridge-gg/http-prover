@@ -35,7 +35,5 @@ jobs:
           sh scripts/1-compile.sh
           sh scripts/2-merge.sh
           ls -Rl examples/
-      - name: Build
-        run: cargo build --verbose
       - name: Run tests
         run: ./scripts/e2e_test.sh
