@@ -8,7 +8,7 @@ pub async fn main() {
     tracing_subscriber::fmt().init();
     let args = Args::parse();
     let access_key = ProverAccessKey::from_hex_string(
-        "0x8c844ac75da32b52e4a98582ab4c7ed5f1dee417b37a7bf9306135fca51d90b4",
+        "0xcaf49783f11af471bd8d05acef5eadafc70731a9cac72885d1b4e73700001322",
     )
     .unwrap();
     let sdk = ProverSDK::new(args.prover_url.clone(), access_key)

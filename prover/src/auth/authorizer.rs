@@ -141,7 +141,25 @@ mod tests {
     fn generate_verifying_key(signing_key: &SigningKey) -> VerifyingKey {
         signing_key.verifying_key()
     }
+    fn serialize_verifying_key(verifying_key: &VerifyingKey) -> String {
+        serde_json::to_string(&verifying_key).unwrap()
+    }
+    fn deserialize_verifying_key(serialized: &str) -> VerifyingKey {
+        serde_json::from_str(serialized).unwrap()
+    }
 
+    #[tokio::test]
+    async fn test_serialize_deserialize_verifying_key() {
+        let signing_key = generate_signing_key();
+        let verifying_key = generate_verifying_key(&signing_key);
+        let serialized_signing_key = serde_json::to_string(&signing_key).unwrap();
+        let serialized = serialize_verifying_key(&verifying_key);
+        println!("serialized_signing_key: {:?}", serialized_signing_key);
+        println!("serialized_verifying_key: {:?}", serialized);
+        let deserialized = deserialize_verifying_key(&serialized);
+
+        assert_eq!(verifying_key, deserialized);
+    }
     #[tokio::test]
     async fn test_memory_authorizer() {
         let signing_key = generate_signing_key();

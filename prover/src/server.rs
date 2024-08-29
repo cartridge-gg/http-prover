@@ -47,10 +47,13 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
             Authorizer::Persistent(FileAuthorizer::new(path).await.unwrap()) //TODO: Handle error
         }
         None=>{
-            // let authorized_keys = args.authorized_keys.unwrap_or_default();
-            // tracing::trace!("Using memory authorization");
-            // Authorizer::Memory(authorized_keys.into())
-            Authorizer::Open
+            let authorized_keys = args.authorized_keys.unwrap_or_default();
+            let mut verifying_keys: Vec<VerifyingKey> = Vec::new();
+            for key in authorized_keys.iter(){
+                tracing::info!("Authorized key: {}", key);
+                verifying_keys.push(serde_json::from_str(key).unwrap());
+            }
+            Authorizer::Memory(verifying_keys.into())
         }
     };
     let app_state = AppState {
