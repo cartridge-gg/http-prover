@@ -17,7 +17,7 @@ else
 fi
 
 docker run -d --name http_prover_test \
-    -p 3040:3000 localhost/http_prover_test \
+    -p 3040:3000 http_prover_test \
     --jwt-secret-key "jwt" \
     --message-expiration-time 3600 \
     --session-expiration-time 3600 \
