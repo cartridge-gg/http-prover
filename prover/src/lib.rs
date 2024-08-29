@@ -1,10 +1,13 @@
-pub mod utils;
+pub mod auth;
 pub mod errors;
 pub mod extractors;
 pub mod prove;
 pub mod server;
-pub mod verifier;
 pub mod threadpool;
+pub mod utils;
+pub mod verifier;
+use std::path::PathBuf;
+
 use clap::{arg, Parser};
 
 #[derive(Parser, Debug)]
@@ -15,7 +18,13 @@ pub struct Args {
     #[arg(long, short, env, default_value = "3000")]
     pub port: u16,
     #[arg(long, short, env, default_value = "3600")]
-    pub message_expiration_time: u32,
+    pub message_expiration_time: usize,
     #[arg(long, short, env, default_value = "3600")]
-    pub session_expiration_time: u32,
+    pub session_expiration_time: usize,
+    #[arg(long, short, env)]
+    pub jwt_secret_key: String,
+    #[arg(long, env, conflicts_with("authorized_keys"))]
+    pub authorized_keys_path: Option<PathBuf>,
+    #[arg(long, env)]
+    pub authorized_keys: Option<Vec<String>>,
 }

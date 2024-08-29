@@ -1,3 +1,5 @@
+use std::io;
+
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -10,4 +12,12 @@ pub enum SdkErrors {
     ProveResponseError(String),
     #[error("Get Job response error: {0}")]
     GetJobResponseError(String),
+    #[error("Prefix error: {0}")]
+    PrefixError(String),
+    #[error("Nonce Request error: {0}")]
+    NonceRequestFailed(String),
+    #[error(transparent)]
+    Parse(#[from] serde_json::Error),
+    #[error("Nonce not found")]
+    NonceNotFound   
 }
