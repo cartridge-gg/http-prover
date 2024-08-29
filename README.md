@@ -1,4 +1,4 @@
-# Prover SDK
+# Prover SDK wip
 
 The Prover SDK is a Rust library for interacting with the Prover service. It provides functionality for authentication, proving, and error handling.
 
