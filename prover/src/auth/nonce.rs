@@ -6,15 +6,11 @@ use axum::{
     Json,
 };
 use bytes::{Bytes, BytesMut};
+use common::requests::GenerateNonceRequest;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use std::{io, ops::Deref, str::FromStr};
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GenerateNonceRequest {
-    pub public_key: String,
-}
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize)]
@@ -63,26 +59,24 @@ pub async fn generate_nonce(
     State(state): State<AppState>,
     Query(params): Query<GenerateNonceRequest>,
 ) -> Result<Json<GenerateNonceResponse>, ProverError> {
-    if params.public_key.trim().is_empty() {
-        return Err(ProverError::CustomError("Public key is empty".to_string()));
-        //TODO: Add proper error
-    }
+    tracing::info!("Generating nonce for public key: {}", params.public_key);
+    let key = serde_json::from_str(&params.public_key).unwrap();
     if !state
         .authorizer
-        .is_authorized(&params.public_key)
+        .is_authorized(key)
         .await
         .unwrap()
     {
         return Err(ProverError::CustomError("Unauthorized".to_string())); //TODO: Add proper error
     }
-    //TODO: add key authorization here
+    tracing::info!("Authorized");
     let message_expiration_time: usize = state.message_expiration_time;
-    //TODO: unharcoded expiration time
     let nonce: Nonce = Nonce::new(32);
     let noce_string = nonce.to_string();
     let mut nonces = state.nonces.lock().await;
-    let formatted_key = params.public_key.trim().to_lowercase();
-    nonces.insert(noce_string, formatted_key);
+    nonces.insert(noce_string, key);
+    drop(nonces);
+    tracing::info!("Nonce generated: {}", nonce);
     Ok(Json(GenerateNonceResponse {
         nonce,
         expiration: message_expiration_time,

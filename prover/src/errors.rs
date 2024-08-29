@@ -4,6 +4,8 @@ use serde_json::json;
 use thiserror::Error;
 use tokio::sync::mpsc::error::SendError;
 
+use crate::auth::auth_errors::AuthError;
+
 #[derive(Debug, Error)]
 pub enum ServerError {
     #[error(transparent)]
@@ -30,6 +32,10 @@ pub enum ProverError {
     CustomError(String),
     #[error("Failed to send message{0}")]
     SendError(String),
+    #[error(transparent)]
+    Auth(#[from] AuthError),
+    #[error("Internal server error{0}")]
+    InternalServerError(String),
 }
 impl<T> From<SendError<T>> for ProverError {
     fn from(err: SendError<T>) -> ProverError {
@@ -69,6 +75,26 @@ impl IntoResponse for ProverError {
             ),
             // Assume you added this variant
             ProverError::SendError(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                msg.as_str(),
+            ),
+            ProverError::Auth(auth_error) => {
+                match auth_error {
+                    AuthError::InvalidToken => (
+                        StatusCode::BAD_REQUEST,
+                        "Invalid token",
+                    ),
+                    AuthError::MissingAuthorizationHeader => (
+                        StatusCode::BAD_REQUEST,
+                        "Missing authorization header",
+                    ),
+                    AuthError::Unauthorized => (
+                        StatusCode::UNAUTHORIZED,
+                        "Unauthorized",
+                    ),
+                }
+            }
+            ProverError::InternalServerError(msg) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 msg.as_str(),
             ),

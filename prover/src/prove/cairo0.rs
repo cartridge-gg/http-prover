@@ -1,3 +1,4 @@
+use crate::auth::jwt::Claims;
 use crate::extractors::workdir::TempDirHandle;
 use crate::server::AppState;
 use crate::threadpool::CairoVersionedInput;
@@ -9,7 +10,8 @@ use serde_json::json;
 
 pub async fn root(
     State(app_state): State<AppState>,
-    TempDirHandle(path): TempDirHandle,
+    TempDirHandle(path): TempDirHandle,    
+    _claims: Claims,
     Json(program_input): Json<Cairo0ProverInput>,
 ) -> impl IntoResponse {
     let thread_pool = app_state.thread_pool.clone();

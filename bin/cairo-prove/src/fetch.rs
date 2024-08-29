@@ -8,7 +8,7 @@ use tracing::info;
 
 use crate::errors::ProveErrors;
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone)] //TODO: Move to common models to avoid duplicating definitions
 pub enum JobStatus {
     Pending,
     Running,
@@ -16,13 +16,13 @@ pub enum JobStatus {
     Failed,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone)]//TODO: Move to common models to avoid duplicating definitions
 pub struct Job {
     pub id: u64,
     pub status: JobStatus,
     pub result: Option<String>, // You can change this to any type based on your use case
 }
-#[derive(Deserialize)]
+#[derive(Deserialize)] //TODO: Move to common models to avoid duplicating definitions
 pub struct JobId {
     pub job_id: u64,
 }

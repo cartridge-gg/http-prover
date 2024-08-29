@@ -2,7 +2,7 @@ use ed25519_dalek::SigningKey;
 
 use crate::errors::SdkErrors;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ProverAccessKey(pub SigningKey);
 
 impl ProverAccessKey {
@@ -56,7 +56,6 @@ mod tests {
             // Test from_hex_string with random input
             if let Ok(prover_access_key) = ProverAccessKey::from_hex_string(&hex_string) {
                 // If we successfully created a ProverAccessKey, check the conversion methods
-                let verifying_key_hex = prover_access_key.verifying_key_as_hex_string();
                 let signing_key_hex = prover_access_key.signing_key_as_hex_string();
 
                 // Recreate the ProverAccessKey from the signing key hex
@@ -69,7 +68,6 @@ mod tests {
             // Generate a new key and test hex string conversion
             let generated_key = ProverAccessKey::generate();
             let signing_key_hex = generated_key.signing_key_as_hex_string();
-            let verifying_key_hex = generated_key.verifying_key_as_hex_string();
 
             // Recreate the ProverAccessKey from the signing key hex
             if let Ok(recreated_key) = ProverAccessKey::from_hex_string(&signing_key_hex) {

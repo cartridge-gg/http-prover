@@ -2,7 +2,7 @@ use common::ProverInput;
 use reqwest::{Client, Response};
 use url::Url;
 
-use crate::errors::SdkErrors;
+use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk_builder::ProverSDKBuilder};
 #[derive(Debug, Clone)]
 /// ProverSDK is a struct representing a client for interacting with the Prover service.
 pub struct ProverSDK {
@@ -11,23 +11,16 @@ pub struct ProverSDK {
     pub prover_cairo: Url,
     pub verify: Url,
     pub get_job: Url,
+    pub authority: ProverAccessKey,
 }
 
 impl ProverSDK {
-    pub fn new(url: Url) -> Result<Self, SdkErrors> {
-        let client = Client::new();
-        let prover_cairo0 = url.join("/prove/cairo0")?;
-        let prover_cairo = url.join("/prove/cairo")?;
-        let verify = url.join("/verify")?;
-        let get_job = url.join("/get-job")?;
-        Ok(Self {
-            client,
-            prover_cairo0,
-            prover_cairo,
-            verify,
-            get_job,
-
-        })
+    pub async fn new(url: Url, access_key: ProverAccessKey) -> Result<Self, SdkErrors> {
+        let auth_url = url.join("auth")?;
+        ProverSDKBuilder::new(auth_url, url)
+            .auth(access_key)
+            .await?
+            .build()
     }
 
     pub async fn prove_cairo0<T>(&self, data: T) -> Result<String, SdkErrors>

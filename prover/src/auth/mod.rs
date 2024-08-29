@@ -5,19 +5,15 @@ pub mod nonce;
 pub mod validation;
 use crate::server::AppState;
 use axum::{
-    response::IntoResponse,
     routing::{get, post},
     Router,
 };
 use nonce::generate_nonce;
+use validation::validate_signature;
 
 pub fn auth(app_state: AppState) -> Router {
     Router::new()
         .route("/auth", get(generate_nonce))
+        .route("/auth", post(validate_signature))
         .with_state(app_state.clone())
-}
-
-pub async fn validate_signature() -> impl IntoResponse {
-    //mock implementation
-    "signature"
 }

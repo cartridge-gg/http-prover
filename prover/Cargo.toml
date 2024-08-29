@@ -21,3 +21,6 @@ serde_with.workspace = true
 bytes.workspace = true
 prefix-hex.workspace = true
 rand.workspace = true
+ed25519-dalek.workspace = true
+chrono.workspace = true
+base64.workspace = true

@@ -1,19 +1,17 @@
 use crate::auth::auth;
 use crate::auth::authorizer::{Authorizer, FileAuthorizer};
-use crate::auth::nonce::Nonce;
 use crate::extractors::workdir::TempDirHandle;
 use crate::threadpool::ThreadPool;
 use crate::utils::job::{get_job, JobStore};
 use crate::utils::shutdown::shutdown_signal;
 use crate::verifier::root;
 use crate::{errors::ServerError, prove, Args};
-use axum::extract::path;
 use axum::{
     middleware,
     routing::{get, post},
     serve, Router,
 };
-use clap::builder::Str;
+use ed25519_dalek::VerifyingKey;
 use core::net::SocketAddr;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -22,7 +20,6 @@ use tokio::sync::Mutex;
 use tracing::trace;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-type PublicKey = String;
 type NonceString = String;
 #[derive(Clone)]
 pub struct AppState {
@@ -31,7 +28,7 @@ pub struct AppState {
     pub message_expiration_time: usize,
     pub session_expiration_time: usize,
     pub jwt_secret_key: String,
-    pub nonces: Arc<Mutex<HashMap<NonceString,PublicKey>>>,
+    pub nonces: Arc<Mutex<HashMap<NonceString,VerifyingKey>>>,
     pub authorizer:Authorizer,
 
 }
@@ -50,9 +47,10 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
             Authorizer::Persistent(FileAuthorizer::new(path).await.unwrap()) //TODO: Handle error
         }
         None=>{
-            let authorized_keys = args.authorized_keys.unwrap_or_default();
-            tracing::trace!("Using memory authorization");
-            Authorizer::Memory(authorized_keys.into())
+            // let authorized_keys = args.authorized_keys.unwrap_or_default();
+            // tracing::trace!("Using memory authorization");
+            // Authorizer::Memory(authorized_keys.into())
+            Authorizer::Open
         }
     };
     let app_state = AppState {

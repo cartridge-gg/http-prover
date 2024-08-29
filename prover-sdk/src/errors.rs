@@ -1,5 +1,3 @@
-use std::io;
-
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -19,5 +17,13 @@ pub enum SdkErrors {
     #[error(transparent)]
     Parse(#[from] serde_json::Error),
     #[error("Nonce not found")]
-    NonceNotFound   
+    NonceNotFound,
+    #[error("Validate Signature response error: {0}")]
+    ValidateSignatureResponseError(String),
+    #[error("JWT Token not found")]
+    JWTTokenNotFound,
+    #[error("JWT Expiration not found")]
+    JWTExpirationNotFound,
+    #[error("Signing key not found")]
+    SigningKeyNotFound
 }
