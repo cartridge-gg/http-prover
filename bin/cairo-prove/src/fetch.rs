@@ -1,28 +1,14 @@
 use std::time::Duration;
 
 use prover_sdk::sdk::ProverSDK;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 use tokio::time::sleep;
 use tracing::info;
 
 use crate::errors::ProveErrors;
 
-#[derive(Serialize, Clone)] //TODO: Move to common models to avoid duplicating definitions
-pub enum JobStatus {
-    Pending,
-    Running,
-    Completed,
-    Failed,
-}
-
-#[derive(Serialize, Clone)] //TODO: Move to common models to avoid duplicating definitions
-pub struct Job {
-    pub id: u64,
-    pub status: JobStatus,
-    pub result: Option<String>, // You can change this to any type based on your use case
-}
-#[derive(Deserialize)] //TODO: Move to common models to avoid duplicating definitions
+#[derive(Deserialize)]
 pub struct JobId {
     pub job_id: u64,
 }

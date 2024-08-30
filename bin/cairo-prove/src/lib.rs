@@ -42,6 +42,8 @@ pub struct Args {
     pub program_input: Option<String>,
     #[arg(long, env)]
     pub program_output: PathBuf,
+    #[arg(long, env)]
+    pub prover_access_key: String,
     #[arg(long, env, default_value = "false")]
     pub wait: bool,
 }
