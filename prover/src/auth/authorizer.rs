@@ -5,9 +5,9 @@ use tokio::{fs::File, io::AsyncReadExt, sync::Mutex};
 
 pub(crate) trait AuthorizationProvider {
     async fn is_authorized(&self, public_key: VerifyingKey) -> Result<bool, AuthorizerError>;
-    //this function will be used later in endpoint /register to add a new public key to the authorized keys
+
+    #[allow(dead_code)]  //this function will be used later in endpoint /register to add a new public key to the authorized keys
     //for now skip highlighting this function
-    
     async fn authorize(&self, public_key: VerifyingKey) -> Result<(), AuthorizerError>;
 }
 
@@ -67,13 +67,16 @@ impl AuthorizationProvider for FileAuthorizer {
         file.read_to_string(&mut contents)
             .await
             .map_err(AuthorizerError::FileAccessError)?;
-
-        let authorized_keys: HashSet<VerifyingKey> = serde_json::from_str::<Vec<VerifyingKey>>(&contents)
-            .map_err(AuthorizerError::FormatError)?
-            .into_iter()
-            .collect();
-
-        Ok(authorized_keys.contains(&public_key))
+        let serialized_keys = serde_json::from_str::<Vec<String>>(&contents)
+            .map_err(AuthorizerError::FormatError)?;
+        for key in serialized_keys.iter(){
+            let verifying_key_bytes = prefix_hex::decode::<Vec<u8>>(key).map_err(|e| AuthorizerError::PrefixHexConversionError(e.to_string()))?;
+            let verifying_key = VerifyingKey::from_bytes(&verifying_key_bytes.try_into()?)?; 
+            if verifying_key == public_key{
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     async fn authorize(&self, public_key: VerifyingKey) -> Result<(), AuthorizerError> {
@@ -110,6 +113,7 @@ pub struct MemoryAuthorizer(Arc<Mutex<HashSet<VerifyingKey>>>);
 
 impl AuthorizationProvider for MemoryAuthorizer {
     async fn is_authorized(&self, public_key: VerifyingKey) -> Result<bool, AuthorizerError> {
+        println!("{}",self.0.lock().await.contains(&public_key));
         Ok(self.0.lock().await.contains(&public_key))
     }
 
@@ -141,24 +145,28 @@ mod tests {
     fn generate_verifying_key(signing_key: &SigningKey) -> VerifyingKey {
         signing_key.verifying_key()
     }
-    fn serialize_verifying_key(verifying_key: &VerifyingKey) -> String {
-        serde_json::to_string(&verifying_key).unwrap()
-    }
-    fn deserialize_verifying_key(serialized: &str) -> VerifyingKey {
-        serde_json::from_str(serialized).unwrap()
-    }
 
     #[tokio::test]
     async fn test_serialize_deserialize_verifying_key() {
-        let signing_key = generate_signing_key();
-        let verifying_key = generate_verifying_key(&signing_key);
-        let serialized_signing_key = serde_json::to_string(&signing_key).unwrap();
-        let serialized = serialize_verifying_key(&verifying_key);
-        println!("serialized_signing_key: {:?}", serialized_signing_key);
-        println!("serialized_verifying_key: {:?}", serialized);
-        let deserialized = deserialize_verifying_key(&serialized);
+        let mut path = PathBuf::new();
+        path.push("authorized_keys.json");
+        let mut verifying_keys: Vec<String> = Vec::new();
+        let mut verifying_keys_deserialized: Vec<VerifyingKey> = Vec::new();
+        for _ in 0..10 {
+            let signing_key = generate_signing_key();
+            let verifying_key = generate_verifying_key(&signing_key);
+            let encoded = verifying_key.to_bytes();
+            let encoded_strig = prefix_hex::encode(encoded);
+            verifying_keys_deserialized.push(verifying_key);
+            verifying_keys.push(encoded_strig);
+        }
+        let serialized_keys  = serde_json::to_string(&verifying_keys).unwrap();
+        fs::write(&path, serialized_keys).await.unwrap();
 
-        assert_eq!(verifying_key, deserialized);
+        let file = FileAuthorizer::new(path.clone()).await.unwrap();
+        for key in verifying_keys_deserialized.iter(){
+            assert!(file.is_authorized(*key).await.unwrap());           
+        }
     }
     #[tokio::test]
     async fn test_memory_authorizer() {
@@ -236,7 +244,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_persistent_authorizer() {
+    async fn test_persistent_authorizer(){
         let signing_key = generate_signing_key();
         let public_key = generate_verifying_key(&signing_key);
 

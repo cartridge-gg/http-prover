@@ -1,5 +1,5 @@
 use super::authorizer::AuthorizationProvider;
-use crate::errors::ProverError;
+use crate::{auth::auth_errors::AuthError, errors::ProverError};
 use crate::server::AppState;
 use axum::{
     extract::{Query, State},
@@ -7,6 +7,7 @@ use axum::{
 };
 use bytes::{Bytes, BytesMut};
 use common::requests::GenerateNonceRequest;
+use ed25519_dalek::VerifyingKey;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
@@ -59,15 +60,9 @@ pub async fn generate_nonce(
     State(state): State<AppState>,
     Query(params): Query<GenerateNonceRequest>,
 ) -> Result<Json<GenerateNonceResponse>, ProverError> {
-    tracing::info!("Generating nonce for public key: {}", params.public_key);
-    let key = serde_json::from_str(&params.public_key).unwrap();
-    if !state
-        .authorizer
-        .is_authorized(key)
-        .await
-        .unwrap()
-    {
-        return Err(ProverError::CustomError("Unauthorized".to_string())); //TODO: Add proper error
+    let key: VerifyingKey = serde_json::from_str(&params.public_key)?;
+    if !state.authorizer.is_authorized(key).await? {
+        return Err(ProverError::Auth(AuthError::Unauthorized));
     }
     tracing::info!("Authorized");
     let message_expiration_time: usize = state.message_expiration_time;

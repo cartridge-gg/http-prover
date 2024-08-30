@@ -8,7 +8,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::{server::AppState};
+use crate::server::AppState;
 
 #[derive(Serialize, Clone)]
 pub enum JobStatus {

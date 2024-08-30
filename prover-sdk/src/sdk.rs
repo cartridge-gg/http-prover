@@ -68,9 +68,7 @@ impl ProverSDK {
         Ok(response_data)
     }
     pub async fn get_job(&self, job_id: u64) -> Result<Response, SdkErrors> {
-        // Construct the URL with the job_id
         let url = format!("{}/{}", self.get_job.clone().as_str(), job_id);
-        // Send the GET request to the constructed URL
         let response = self.client.get(url).send().await?;
 
         // Check if the response status is successful

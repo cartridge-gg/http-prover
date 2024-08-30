@@ -11,8 +11,8 @@ use axum::{
     routing::{get, post},
     serve, Router,
 };
-use ed25519_dalek::VerifyingKey;
 use core::net::SocketAddr;
+use ed25519_dalek::VerifyingKey;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -28,9 +28,8 @@ pub struct AppState {
     pub message_expiration_time: usize,
     pub session_expiration_time: usize,
     pub jwt_secret_key: String,
-    pub nonces: Arc<Mutex<HashMap<NonceString,VerifyingKey>>>,
-    pub authorizer:Authorizer,
-
+    pub nonces: Arc<Mutex<HashMap<NonceString, VerifyingKey>>>,
+    pub authorizer: Authorizer,
 }
 
 pub async fn start(args: Args) -> Result<(), ServerError> {
@@ -41,17 +40,20 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
-    let authorizer = match args.authorized_keys_path{
-        Some(path)=>{
+    let authorizer = match args.authorized_keys_path {
+        Some(path) => {
             tracing::info!("Using authorized keys from file");
             Authorizer::Persistent(FileAuthorizer::new(path).await.unwrap()) //TODO: Handle error
         }
-        None=>{
+        None => {
+            tracing::info!("Using authorized keys from command line");
             let authorized_keys = args.authorized_keys.unwrap_or_default();
             let mut verifying_keys: Vec<VerifyingKey> = Vec::new();
-            for key in authorized_keys.iter(){
+            for key in authorized_keys.iter() {
                 tracing::info!("Authorized key: {}", key);
-                verifying_keys.push(serde_json::from_str(key).unwrap());
+                let key_bytes = prefix_hex::decode::<Vec<u8>>(key).unwrap();
+                verifying_keys
+                    .push(VerifyingKey::from_bytes(&key_bytes.try_into().unwrap()).unwrap());
             }
             Authorizer::Memory(verifying_keys.into())
         }
@@ -72,7 +74,7 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
         .with_state(app_state.clone())
         .nest("/", auth(app_state.clone()))
         .nest("/prove", prove::router(app_state.clone()))
-        .layer(middleware::from_extractor::<TempDirHandle>());  
+        .layer(middleware::from_extractor::<TempDirHandle>());
 
     let address: SocketAddr = format!("{}:{}", args.host, args.port)
         .parse()

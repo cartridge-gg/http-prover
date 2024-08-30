@@ -1,6 +1,10 @@
 use std::{collections::HashMap, fmt::Display};
 
-use axum::{async_trait, extract::{FromRef, FromRequestParts}, http::{header::COOKIE, request::Parts}};
+use axum::{
+    async_trait,
+    extract::{FromRef, FromRequestParts},
+    http::{header::COOKIE, request::Parts},
+};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
@@ -19,20 +23,21 @@ where
         let store: AppState = AppState::from_ref(_state);
 
         // Extract the 'Cookie' header
-        let header_value = parts.headers.get(COOKIE).ok_or_else(|| {
-            warn!("Missing 'Cookie' header in the request");
-            ProverError::Auth(AuthError::MissingAuthorizationHeader)
-        })?;
-        // Convert the header value to a string
-        let cookie_str = header_value
+        let cookie_str = parts
+            .headers
+            .get(COOKIE)
+            .ok_or_else(|| {
+                warn!("Missing 'Cookie' header in the request");
+                ProverError::Auth(AuthError::MissingAuthorizationHeader)
+            })?
             .to_str()
             .map_err(|_| ProverError::Auth(AuthError::InvalidToken))?;
 
         // Parse the cookie string into a HashMap
         let cookies: HashMap<_, _> = cookie_str
             .split(';')
-            .filter_map(|s| {
-                let mut parts = s.split('=');
+            .filter_map(|cookie| {
+                let mut parts = cookie.split('=');
                 match (parts.next(), parts.next()) {
                     (Some(key), Some(value)) => Some((key.trim(), value.trim())),
                     _ => None,
@@ -77,7 +82,6 @@ impl Keys {
             decoding: DecodingKey::from_secret(secret),
         }
     }
-    
 }
 pub fn encode_jwt(sub: &str, exp: usize, keys: Keys) -> Result<String, ProverError> {
     let claims = Claims {

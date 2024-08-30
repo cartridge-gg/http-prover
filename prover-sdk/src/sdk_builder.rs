@@ -1,5 +1,8 @@
 use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk::ProverSDK};
-use common::{models::JWTResponse, requests::ValidateSignatureRequest};
+use common::{
+    models::JWTResponse,
+    requests::{GenerateNonceRequest, ValidateSignatureRequest},
+};
 use ed25519_dalek::{Signature, Signer, VerifyingKey};
 use reqwest::{cookie::Jar, Client};
 use serde_json::Value;
@@ -25,13 +28,10 @@ impl ProverSDKBuilder {
         }
     }
     pub async fn get_nonce(&self, public_key: &VerifyingKey) -> Result<String, SdkErrors> {
-        let url_with_params = format!(
-            "{}?public_key={}",
-            self.auth,
-            serde_json::to_string(&public_key)?
-        );
-        println!("url_with_params: {}", url_with_params);
-        let response = self.client.get(&url_with_params).send().await?;
+        let nonce_req = GenerateNonceRequest {
+            public_key: serde_json::to_string(&public_key)?,
+        };
+        let response = self.client.get(self.auth.clone()).query(&nonce_req).send().await?;
 
         if !response.status().is_success() {
             return Err(SdkErrors::NonceRequestFailed(format!(
@@ -87,12 +87,14 @@ impl ProverSDKBuilder {
             expiration: expiration,
         })
     }
+    
     pub async fn auth(mut self, signing_key: ProverAccessKey) -> Result<Self, SdkErrors> {
         self.signing_key = Some(signing_key);
         let jwt_response = self.get_jwt_token().await?;
         self.jwt_token = Some(jwt_response.jwt_token);
         Ok(self)
     }
+
     async fn get_jwt_token(&self) -> Result<JWTResponse, SdkErrors> {
         let signing_key = self
             .signing_key
@@ -107,6 +109,7 @@ impl ProverSDKBuilder {
 
         self.validate_signature(signed_nonce, nonce).await
     }
+
     pub fn build(self) -> Result<ProverSDK, SdkErrors> {
         let signing_key = self.signing_key.ok_or(SdkErrors::SigningKeyNotFound)?;
 

@@ -7,7 +7,6 @@ use axum::{
 };
 use common::{models::JWTResponse, requests::ValidateSignatureRequest};
 use ed25519_dalek::Verifier;
-
 use super::jwt::{encode_jwt, Keys};
 pub const COOKIE_NAME: &str = "jwt_token";
 
