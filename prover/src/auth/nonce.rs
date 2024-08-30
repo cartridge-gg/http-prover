@@ -1,6 +1,6 @@
 use super::authorizer::AuthorizationProvider;
-use crate::{auth::auth_errors::AuthError, errors::ProverError};
 use crate::server::AppState;
+use crate::{auth::auth_errors::AuthError, errors::ProverError};
 use axum::{
     extract::{Query, State},
     Json,

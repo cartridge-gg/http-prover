@@ -59,7 +59,9 @@ impl IntoResponse for ProverError {
                 (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
             }
             ProverError::Authorizer(authorizer_error) => match authorizer_error {
-                AuthorizerError::FileAccessError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+                AuthorizerError::FileAccessError(e) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+                }
                 AuthorizerError::FormatError(e) => (StatusCode::BAD_REQUEST, e.to_string()),
                 AuthorizerError::MissingAuthorizationHeader => {
                     (StatusCode::BAD_REQUEST, authorizer_error.to_string())
@@ -68,7 +70,10 @@ impl IntoResponse for ProverError {
                     (StatusCode::BAD_REQUEST, e.to_string())
                 }
                 AuthorizerError::VerifyingKeyError(e) => (StatusCode::BAD_REQUEST, e.to_string()),
-                AuthorizerError::DataError(_e) => (StatusCode::INTERNAL_SERVER_ERROR,"Conversion to Vec<u8> failed".to_string()),
+                AuthorizerError::DataError(_e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Conversion to Vec<u8> failed".to_string(),
+                ),
             },
         };
 

@@ -1,5 +1,5 @@
-use thiserror::Error;
 use reqwest::Error as ReqwestError;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ProveErrors {

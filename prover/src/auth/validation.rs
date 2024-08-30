@@ -1,3 +1,4 @@
+use super::jwt::{encode_jwt, Keys};
 use crate::{errors::ProverError, server::AppState};
 use axum::{
     extract::State,
@@ -7,7 +8,6 @@ use axum::{
 };
 use common::{models::JWTResponse, requests::ValidateSignatureRequest};
 use ed25519_dalek::Verifier;
-use super::jwt::{encode_jwt, Keys};
 pub const COOKIE_NAME: &str = "jwt_token";
 
 pub async fn validate_signature(
@@ -58,7 +58,7 @@ pub async fn validate_signature(
         headers,
         Json(JWTResponse {
             jwt_token: token,
-            expiration:expiration.timestamp() as u64,
+            expiration: expiration.timestamp() as u64,
         }),
     ))
 }

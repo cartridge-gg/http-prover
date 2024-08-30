@@ -16,7 +16,7 @@ pub enum JobStatus {
     Failed,
 }
 
-#[derive(Serialize, Clone)]//TODO: Move to common models to avoid duplicating definitions
+#[derive(Serialize, Clone)] //TODO: Move to common models to avoid duplicating definitions
 pub struct Job {
     pub id: u64,
     pub status: JobStatus,

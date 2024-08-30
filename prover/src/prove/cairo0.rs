@@ -10,7 +10,7 @@ use serde_json::json;
 
 pub async fn root(
     State(app_state): State<AppState>,
-    TempDirHandle(path): TempDirHandle,    
+    TempDirHandle(path): TempDirHandle,
     _claims: Claims,
     Json(program_input): Json<Cairo0ProverInput>,
 ) -> impl IntoResponse {
@@ -25,7 +25,8 @@ pub async fn root(
             path,
             CairoVersionedInput::Cairo0(program_input),
         )
-        .await.into_response();
+        .await
+        .into_response();
     let body = json!({
         "job_id": job_id
     });

@@ -1,6 +1,5 @@
 use prover_sdk::access_key::ProverAccessKey;
 
-
 fn main() {
     let key = ProverAccessKey::generate();
     println!(

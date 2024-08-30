@@ -1,8 +1,8 @@
-use tokio::signal;
 use crate::threadpool::ThreadPool;
 use std::sync::Arc;
+use tokio::signal;
 use tokio::sync::Mutex;
-use tracing::info;  // Import the logging macro
+use tracing::info; // Import the logging macro
 
 pub async fn shutdown_signal(thread_pool: Arc<Mutex<ThreadPool>>) {
     let ctrl_c = async {

@@ -5,8 +5,11 @@ use std::str::FromStr;
 use tempfile::TempDir;
 use tokio::process::Command;
 
-use crate::utils::{config::generate,job::{update_job_status, JobStatus, JobStore}};
 use crate::errors::ProverError;
+use crate::utils::{
+    config::generate,
+    job::{update_job_status, JobStatus, JobStore},
+};
 
 use super::CairoVersionedInput;
 
@@ -84,21 +87,9 @@ pub async fn prove(
     let proof: Value = serde_json::from_str(&result)?;
     let final_result = serde_json::to_string_pretty(&proof)?;
     if status_proof.success() {
-        update_job_status(
-            job_id,
-            &job_store,
-            JobStatus::Completed,
-            Some(final_result),
-        )
-        .await;
+        update_job_status(job_id, &job_store, JobStatus::Completed, Some(final_result)).await;
     } else {
-        update_job_status(
-            job_id,
-            &job_store,
-            JobStatus::Failed,
-            Some(final_result),
-        )
-        .await;
+        update_job_status(job_id, &job_store, JobStatus::Failed, Some(final_result)).await;
     }
     Ok(())
 }

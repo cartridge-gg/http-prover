@@ -7,7 +7,7 @@ use crate::ProverInput;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cairo0ProverInput {
     pub program: Cairo0CompiledProgram,
-    pub program_input_path:PathBuf,
+    pub program_input_path: PathBuf,
     pub layout: String,
 }
 

@@ -46,7 +46,10 @@ impl ThreadPool {
         program_input: CairoVersionedInput,
     ) -> Result<(), ProverError> {
         self.sender
-            .as_ref().ok_or(ProverError::CustomError("Thread pool is shutdown".to_string()))?
+            .as_ref()
+            .ok_or(ProverError::CustomError(
+                "Thread pool is shutdown".to_string(),
+            ))?
             .send((job_id, job_store, dir, program_input))
             .await?;
         Ok(())
@@ -96,7 +99,8 @@ impl Worker {
                     }
                     None => {
                         trace!("Worker {id} detected shutdown signal.");
-                        break;},
+                        break;
+                    }
                 }
             }
         });

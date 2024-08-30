@@ -2,7 +2,7 @@ use ed25519_dalek::SigningKey;
 
 use crate::errors::SdkErrors;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct ProverAccessKey(pub SigningKey);
 
 impl ProverAccessKey {
@@ -11,7 +11,12 @@ impl ProverAccessKey {
     }
 
     pub fn from_hex_string(hex_string: &str) -> Result<Self, SdkErrors> {
-        let bytes = prefix_hex::decode::<Vec<u8>>(&hex_string).map_err(|e| SdkErrors::PrefixError(format!("Failed to decode string to bytes {}",e.to_string())))?;
+        let bytes = prefix_hex::decode::<Vec<u8>>(&hex_string).map_err(|e| {
+            SdkErrors::PrefixError(format!(
+                "Failed to decode string to bytes {}",
+                e.to_string()
+            ))
+        })?;
         let mut array = [0u8; 32];
         array.copy_from_slice(&bytes);
         let signer = SigningKey::from_bytes(&array);
@@ -60,8 +65,14 @@ mod tests {
 
                 // Recreate the ProverAccessKey from the signing key hex
                 if let Ok(recreated_key) = ProverAccessKey::from_hex_string(&signing_key_hex) {
-                    assert_eq!(prover_access_key.signing_key_as_hex_string(), recreated_key.signing_key_as_hex_string());
-                    assert_eq!(prover_access_key.verifying_key_as_hex_string(), recreated_key.verifying_key_as_hex_string());
+                    assert_eq!(
+                        prover_access_key.signing_key_as_hex_string(),
+                        recreated_key.signing_key_as_hex_string()
+                    );
+                    assert_eq!(
+                        prover_access_key.verifying_key_as_hex_string(),
+                        recreated_key.verifying_key_as_hex_string()
+                    );
                 }
             }
 
@@ -71,8 +82,14 @@ mod tests {
 
             // Recreate the ProverAccessKey from the signing key hex
             if let Ok(recreated_key) = ProverAccessKey::from_hex_string(&signing_key_hex) {
-                assert_eq!(generated_key.signing_key_as_hex_string(), recreated_key.signing_key_as_hex_string());
-                assert_eq!(generated_key.verifying_key_as_hex_string(), recreated_key.verifying_key_as_hex_string());
+                assert_eq!(
+                    generated_key.signing_key_as_hex_string(),
+                    recreated_key.signing_key_as_hex_string()
+                );
+                assert_eq!(
+                    generated_key.verifying_key_as_hex_string(),
+                    recreated_key.verifying_key_as_hex_string()
+                );
             }
         }
     }

@@ -25,5 +25,5 @@ pub enum SdkErrors {
     #[error("JWT Expiration not found")]
     JWTExpirationNotFound,
     #[error("Signing key not found")]
-    SigningKeyNotFound
+    SigningKeyNotFound,
 }

@@ -29,7 +29,7 @@ pub struct Job {
 #[serde(untagged)]
 pub enum JobResponse {
     InProgress { id: u64, status: JobStatus },
-    Completed { result: String,status: JobStatus },
+    Completed { result: String, status: JobStatus },
     Failed { error: String },
 }
 pub type JobStore = Arc<Mutex<Vec<Job>>>;
@@ -60,7 +60,7 @@ pub async fn update_job_status(
     }
     drop(jobs);
 }
-pub async fn get_job(Path(id): Path<u64>, State(app_state): State<AppState>,) -> impl IntoResponse {
+pub async fn get_job(Path(id): Path<u64>, State(app_state): State<AppState>) -> impl IntoResponse {
     let job_store = &app_state.job_store;
     let jobs = job_store.lock().await;
     if let Some(job) = jobs.iter().find(|job| job.id == id) {

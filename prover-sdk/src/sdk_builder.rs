@@ -31,7 +31,12 @@ impl ProverSDKBuilder {
         let nonce_req = GenerateNonceRequest {
             public_key: serde_json::to_string(&public_key)?,
         };
-        let response = self.client.get(self.auth.clone()).query(&nonce_req).send().await?;
+        let response = self
+            .client
+            .get(self.auth.clone())
+            .query(&nonce_req)
+            .send()
+            .await?;
 
         if !response.status().is_success() {
             return Err(SdkErrors::NonceRequestFailed(format!(
@@ -87,7 +92,7 @@ impl ProverSDKBuilder {
             expiration: expiration,
         })
     }
-    
+
     pub async fn auth(mut self, signing_key: ProverAccessKey) -> Result<Self, SdkErrors> {
         self.signing_key = Some(signing_key);
         let jwt_response = self.get_jwt_token().await?;
