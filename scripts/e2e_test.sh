@@ -9,15 +9,15 @@ if docker images | grep -q "$IMAGE_NAME"; then
     echo "Image $IMAGE_NAME already exists. Skipping build step."
 else
     echo "Image $IMAGE_NAME does not exist. Building the image..."
-    docker build -t $IMAGE_NAME .
+
     if [ $? -ne 0 ]; then
         echo "Failed to build the image. Exiting."
         exit 1
     fi
 fi
 
-docker run -d --name http-prover \
-    -p 3040:3000 http-prover \
+docker run -d --name $IMAGE_NAME \
+    -p 3040:3000 $IMAGE_NAME \
     --jwt-secret-key "jwt" \
     --message-expiration-time 3600 \
     --session-expiration-time 3600 \
