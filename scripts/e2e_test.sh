@@ -2,7 +2,7 @@
 
 set -eux
 
-IMAGE_NAME="http_prover_test"
+IMAGE_NAME="http-prover"
 
 # Check if the image already exists
 if docker images | grep -q "$IMAGE_NAME"; then
@@ -16,8 +16,8 @@ else
     fi
 fi
 
-docker run -d --name http_prover_test \
-    -p 3040:3000 http_prover_test \
+docker run -d --name http-prover \
+    -p 3040:3000 http-prover \
     --jwt-secret-key "jwt" \
     --message-expiration-time 3600 \
     --session-expiration-time 3600 \
