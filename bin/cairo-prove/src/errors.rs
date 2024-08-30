@@ -17,4 +17,6 @@ pub enum ProveErrors {
     Parse(#[from] serde_json::Error),
     #[error(transparent)]
     RequestFailed(#[from] ReqwestError),
+    #[error("{0}")]
+    Custom(String),
 }

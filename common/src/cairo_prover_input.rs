@@ -1,13 +1,12 @@
-use std::path::PathBuf;
-
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt;
 
 use crate::ProverInput;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CairoProverInput {
     pub program: CairoCompiledProgram,
-    pub program_input_path: PathBuf,
+    pub program_input: Vec<Felt>,
     pub layout: String,
 }
 impl ProverInput for CairoProverInput {

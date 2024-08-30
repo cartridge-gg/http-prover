@@ -1,17 +1,16 @@
-use serde_json::Value;
-use std::fs;
-use std::path::PathBuf;
-use std::str::FromStr;
-use tempfile::TempDir;
-use tokio::process::Command;
-
+use super::CairoVersionedInput;
 use crate::errors::ProverError;
 use crate::utils::{
     config::generate,
     job::{update_job_status, JobStatus, JobStore},
 };
-
-use super::CairoVersionedInput;
+use serde_json::Value;
+use starknet_types_core::felt::Felt;
+use std::fs;
+use std::path::PathBuf;
+use std::str::FromStr;
+use tempfile::TempDir;
+use tokio::process::Command;
 
 pub async fn prove(
     job_id: u64,
@@ -21,6 +20,7 @@ pub async fn prove(
 ) -> Result<(), ProverError> {
     update_job_status(job_id, &job_store, JobStatus::Running, None).await;
     let path = dir.into_path();
+    let program_input_path: PathBuf = path.join("program_input.json");
     let program_path: PathBuf = path.join("program.json");
     let proof_path: PathBuf = path.join("program_proof_cairo.json");
     let trace_file = path.join("program_trace.trace");
@@ -31,10 +31,11 @@ pub async fn prove(
     let config_file = PathBuf::from_str("config/cpu_air_prover_config.json")?;
     match program_input {
         CairoVersionedInput::Cairo(input) => {
-            let program_input_path: PathBuf = input.program_input_path;
-            let layout = input.layout;
             let program = serde_json::to_string(&input.program)?;
-            fs::write(&program_path, program.clone())?;
+            let layout = input.layout;
+            let input = prepare_input(input.program_input)?;
+            fs::write(&program_path, &program)?;
+            fs::write(&program_input_path, &input)?;
             cairo_run(
                 trace_file,
                 memory_file,
@@ -47,11 +48,12 @@ pub async fn prove(
             .await?;
         }
         CairoVersionedInput::Cairo0(input) => {
-            let program_input_path: PathBuf = input.program_input_path;
+            fs::write(
+                program_input_path.clone(),
+                serde_json::to_string(&input.program_input)?,
+            )?;
+            fs::write(&program_path, serde_json::to_string(&input.program)?)?;
             let layout = input.layout;
-            let program = serde_json::to_string(&input.program)?;
-            fs::write(&program_path, program.clone())?;
-
             cairo0_run(
                 trace_file,
                 memory_file,
@@ -154,4 +156,20 @@ pub async fn cairo_run(
     let mut child = command.spawn()?;
     let _status = child.wait().await?;
     Ok(())
+}
+pub fn prepare_input(felts: Vec<Felt>) -> Result<String, ProverError> {
+    if felts.len() < 1 {
+        return Err(ProverError::CustomError(
+            "Input is empty, input must be a array of felt in format [felt,...,felt]".to_string(),
+        ));
+    }
+    let mut input = String::from("[");
+    for i in 0..felts.len() {
+        input.push_str(&felts[i].to_string());
+        if i != felts.len() - 1 {
+            input.push_str(" ");
+        }
+    }
+    input.push_str("]");
+    Ok(input)
 }

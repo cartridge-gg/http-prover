@@ -16,3 +16,4 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 reqwest.workspace = true
 ed25519-dalek.workspace = true
+starknet-types-core.workspace = true
