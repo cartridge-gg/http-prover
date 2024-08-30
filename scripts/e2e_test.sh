@@ -9,7 +9,7 @@ if docker images | grep -q "$IMAGE_NAME"; then
     echo "Image $IMAGE_NAME already exists. Skipping build step."
 else
     echo "Image $IMAGE_NAME does not exist. Building the image..."
-
+    docker build -t $IMAGE_NAME .
     if [ $? -ne 0 ]; then
         echo "Failed to build the image. Exiting."
         exit 1
