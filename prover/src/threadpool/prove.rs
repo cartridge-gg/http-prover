@@ -160,7 +160,7 @@ pub async fn cairo_run(
     Ok(())
 }
 pub fn prepare_input(felts: Vec<Felt>) -> Result<String, ProverError> {
-    if felts.len() < 1 {
+    if felts.is_empty() {
         return Err(ProverError::CustomError(
             "Input is empty, input must be a array of felt in format [felt,...,felt]".to_string(),
         ));
@@ -169,9 +169,9 @@ pub fn prepare_input(felts: Vec<Felt>) -> Result<String, ProverError> {
     for i in 0..felts.len() {
         input.push_str(&felts[i].to_string());
         if i != felts.len() - 1 {
-            input.push_str(" ");
+            input.push(' ');
         }
     }
-    input.push_str("]");
+    input.push(']');
     Ok(input)
 }

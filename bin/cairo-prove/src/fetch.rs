@@ -25,7 +25,7 @@ pub async fn fetch_job(sdk: ProverSDK, job: String) -> Result<String, ProveError
                 return Ok(json_response
                     .get("result")
                     .and_then(Value::as_str)
-                    .unwrap_or_else(|| "No result found")
+                    .unwrap_or( "No result found")
                     .to_string());
             }
         }

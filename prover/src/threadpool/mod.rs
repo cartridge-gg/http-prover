@@ -9,6 +9,7 @@ use tokio::{
 };
 use tracing::trace;
 pub mod prove;
+type ReceiverType = Arc<Mutex<mpsc::Receiver<(u64, JobStore, TempDir, CairoVersionedInput)>>>;
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: Option<mpsc::Sender<(u64, JobStore, TempDir, CairoVersionedInput)>>,
@@ -82,7 +83,7 @@ struct Worker {
 impl Worker {
     fn new(
         id: usize,
-        receiver: Arc<Mutex<mpsc::Receiver<(u64, JobStore, TempDir, CairoVersionedInput)>>>,
+        receiver: ReceiverType,
     ) -> Worker {
         let thread = spawn(async move {
             loop {

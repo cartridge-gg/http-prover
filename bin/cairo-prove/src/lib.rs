@@ -56,7 +56,7 @@ pub struct Args {
 }
 
 pub fn validate_input_for_vec(input: Vec<String>) -> Result<Vec<Felt>, ProveErrors> {
-    if input.len() < 1 {
+    if input.is_empty() {
         return Err(ProveErrors::Custom(
             "Input is empty, input must be a array of felt in format [felt,...,felt]".to_string(),
         ));
@@ -64,10 +64,7 @@ pub fn validate_input_for_vec(input: Vec<String>) -> Result<Vec<Felt>, ProveErro
     let mut args = Vec::new();
     for num in input {
         let num = num
-            .replace("[", "")
-            .replace("]", "")
-            .replace(" ", "")
-            .replace("\n", "");
+            .replace(['[', ']', ' ', '\n'], "");
         match num.parse::<Felt>() {
             Ok(num) => args.push(num),
             Err(_) => {

@@ -28,10 +28,7 @@ pub async fn validate_signature(
     tracing::info!("Public key found for nonce");
     let encoded_public_key = prefix_hex::encode(public_key.to_bytes());
     let serialized_message = serde_json::to_string(&payload.message)?;
-    let verification = match public_key.verify(serialized_message.as_bytes(), &payload.signature) {
-        Ok(_) => true,
-        Err(_) => false,
-    };
+    let verification = public_key.verify(serialized_message.as_bytes(), &payload.signature).is_ok();
     if !verification {
         return Err(ProverError::CustomError("Signature is invalid".to_string()));
     }

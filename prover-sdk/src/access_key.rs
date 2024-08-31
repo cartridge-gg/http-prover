@@ -14,7 +14,7 @@ impl ProverAccessKey {
         let bytes = prefix_hex::decode::<Vec<u8>>(&hex_string).map_err(|e| {
             SdkErrors::PrefixError(format!(
                 "Failed to decode string to bytes {}",
-                e.to_string()
+                e
             ))
         })?;
         let mut array = [0u8; 32];
@@ -23,11 +23,11 @@ impl ProverAccessKey {
         Ok(Self(signer))
     }
     pub fn verifying_key_as_hex_string(&self) -> String {
-        prefix_hex::encode(&self.0.verifying_key().to_bytes())
+        prefix_hex::encode(self.0.verifying_key().to_bytes())
     }
 
     pub fn signing_key_as_hex_string(&self) -> String {
-        prefix_hex::encode(&self.0.to_bytes())
+        prefix_hex::encode(self.0.to_bytes())
     }
     pub fn generate() -> Self {
         let mut rng = rand::thread_rng();

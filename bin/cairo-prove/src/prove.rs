@@ -23,14 +23,14 @@ pub async fn prove(args: Args, sdk: ProverSDK) -> Result<String, ProveErrors> {
             let data = Cairo0ProverInput {
                 program: program_serialized,
                 layout: args.layout,
-                program_input: program_input,
+                program_input
             };
             sdk.prove_cairo0(data).await?
         }
         CairoVersion::V1 => {
             let input = match args.clone().program_input_path {
                 Some(input_path) => {
-                    let input = std::fs::read_to_string(&input_path)?;
+                    let input = std::fs::read_to_string(input_path)?;
                     validate_input(&input)?
                 }
                 None => validate_input_for_vec(args.clone().program_input)?,

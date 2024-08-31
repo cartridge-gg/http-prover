@@ -66,7 +66,7 @@ impl ProverSDKBuilder {
     ) -> Result<JWTResponse, SdkErrors> {
         let request = ValidateSignatureRequest {
             signature: signed_message,
-            message: message,
+            message,
         };
         let response = self
             .client
@@ -90,8 +90,8 @@ impl ProverSDKBuilder {
             .as_u64()
             .ok_or(SdkErrors::JWTExpirationNotFound)?;
         Ok(JWTResponse {
-            jwt_token: jwt_token,
-            expiration: expiration,
+            jwt_token,
+            expiration,
             session_key: self.session_key.as_ref().map(|k| k.verifying_key()),
         })
     }
@@ -120,7 +120,7 @@ impl ProverSDKBuilder {
             .verifying_key();
         let message = Message {
             session_key: session_public_key,
-            nonce: nonce,
+            nonce,
         };
         let message_string = serde_json::to_string(&message)?;
         let signed_message = signing_key.0.sign(message_string.as_bytes());
