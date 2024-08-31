@@ -11,14 +11,6 @@ use tokio::sync::mpsc::error::SendError;
 use crate::auth::auth_errors::{AuthError, AuthorizerError};
 
 #[derive(Debug, Error)]
-pub enum ServerError {
-    #[error(transparent)]
-    Server(#[from] std::io::Error),
-
-    #[error(transparent)]
-    AddressParse(#[from] AddrParseError),
-}
-#[derive(Debug, Error)]
 pub enum ProverError {
     #[error(transparent)]
     Parse(#[from] serde_json::Error),
@@ -36,6 +28,10 @@ pub enum ProverError {
     InternalServerError(String),
     #[error(transparent)]
     Authorizer(#[from] AuthorizerError),
+    #[error(transparent)]
+    AddressParse(#[from] AddrParseError),
+    #[error(transparent)]
+    KeyError(#[from] ed25519_dalek::SignatureError),
 }
 impl<T> From<SendError<T>> for ProverError {
     fn from(err: SendError<T>) -> ProverError {
@@ -75,6 +71,8 @@ impl IntoResponse for ProverError {
                     "Conversion to Vec<u8> failed".to_string(),
                 ),
             },
+            ProverError::AddressParse(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            ProverError::KeyError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
         };
 
         let body = Json(json!({ "error": error_message }));

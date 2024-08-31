@@ -1,13 +1,11 @@
 use super::auth_errors::AuthorizerError;
 use ed25519_dalek::VerifyingKey;
-use std::{collections::HashSet, path::PathBuf, sync::Arc};
-use tokio::{fs::File, io::AsyncReadExt, sync::Mutex};
+use std::path::PathBuf;
+use tokio::{fs::File, io::AsyncReadExt};
 
 pub(crate) trait AuthorizationProvider {
     async fn is_authorized(&self, public_key: VerifyingKey) -> Result<bool, AuthorizerError>;
-
-    #[allow(dead_code)] //this function will be used later in endpoint /register to add a new public key to the authorized keys
-                        //for now skip highlighting this function
+    
     async fn authorize(&self, public_key: VerifyingKey) -> Result<(), AuthorizerError>;
 }
 
@@ -15,8 +13,6 @@ pub(crate) trait AuthorizationProvider {
 pub enum Authorizer {
     Open,
     Persistent(FileAuthorizer),
-    ReadOnlyFile(FileAuthorizer, MemoryAuthorizer),
-    Memory(MemoryAuthorizer),
 }
 
 impl AuthorizationProvider for Authorizer {
@@ -24,11 +20,6 @@ impl AuthorizationProvider for Authorizer {
         Ok(match self {
             Authorizer::Open => true,
             Authorizer::Persistent(authorizer) => authorizer.is_authorized(public_key).await?,
-            Authorizer::Memory(authorizer) => authorizer.is_authorized(public_key).await?,
-            Authorizer::ReadOnlyFile(file_authorizer, memory_authorizer) => {
-                memory_authorizer.is_authorized(public_key).await?
-                    || file_authorizer.is_authorized(public_key).await?
-            }
         })
     }
 
@@ -36,10 +27,6 @@ impl AuthorizationProvider for Authorizer {
         match self {
             Authorizer::Open => Ok(()),
             Authorizer::Persistent(authorizer) => authorizer.authorize(public_key).await,
-            Authorizer::Memory(authorizer) => authorizer.authorize(public_key).await,
-            Authorizer::ReadOnlyFile(_, memory_authorizer) => {
-                memory_authorizer.authorize(public_key).await
-            }
         }
     }
 }
@@ -49,14 +36,18 @@ pub struct FileAuthorizer(PathBuf);
 
 impl FileAuthorizer {
     pub async fn new(path: PathBuf) -> Result<Self, AuthorizerError> {
-        File::open(&path)
-            .await
-            .map_err(AuthorizerError::FileAccessError)?;
-
+        if !path.exists() {
+            tokio::fs::write(&path, "[]")
+                .await
+                .map_err(AuthorizerError::FileAccessError)?;
+        } else {
+            File::open(&path)
+                .await
+                .map_err(AuthorizerError::FileAccessError)?;
+        }
         Ok(Self(path))
     }
 }
-
 impl AuthorizationProvider for FileAuthorizer {
     async fn is_authorized(&self, public_key: VerifyingKey) -> Result<bool, AuthorizerError> {
         let mut file = File::open(&self.0)
@@ -67,8 +58,14 @@ impl AuthorizationProvider for FileAuthorizer {
         file.read_to_string(&mut contents)
             .await
             .map_err(AuthorizerError::FileAccessError)?;
-        let serialized_keys =
-            serde_json::from_str::<Vec<String>>(&contents).map_err(AuthorizerError::FormatError)?;
+
+        if contents.trim().is_empty() {
+            return Ok(false);
+        }
+
+        let serialized_keys: Vec<String> =
+            serde_json::from_str(&contents).map_err(AuthorizerError::FormatError)?;
+
         for key in serialized_keys.iter() {
             let verifying_key_bytes = prefix_hex::decode::<Vec<u8>>(key)
                 .map_err(|e| AuthorizerError::PrefixHexConversionError(e.to_string()))?;
@@ -81,25 +78,24 @@ impl AuthorizationProvider for FileAuthorizer {
     }
 
     async fn authorize(&self, public_key: VerifyingKey) -> Result<(), AuthorizerError> {
+        let mut contents = String::new();
+
         let mut file = File::open(&self.0)
             .await
             .map_err(AuthorizerError::FileAccessError)?;
 
-        let mut contents = String::new();
         file.read_to_string(&mut contents)
             .await
             .map_err(AuthorizerError::FileAccessError)?;
 
-        let mut authorized_keys: HashSet<VerifyingKey> =
-            serde_json::from_str::<Vec<VerifyingKey>>(&contents)
-                .map_err(AuthorizerError::FormatError)?
-                .into_iter()
-                .collect();
+        let mut serialized_keys: Vec<String> =
+            serde_json::from_str(&contents).unwrap_or_else(|_| Vec::new());
 
-        authorized_keys.insert(public_key);
-
-        let new_contents =
-            serde_json::to_string(&authorized_keys).map_err(AuthorizerError::FormatError)?;
+        serialized_keys.push(prefix_hex::encode(public_key.to_bytes()));
+        let new_contents = serde_json::to_string(&serialized_keys)
+            .map_err(AuthorizerError::FormatError)?
+            .as_bytes()
+            .to_vec();
 
         tokio::fs::write(&self.0, new_contents)
             .await
@@ -108,31 +104,8 @@ impl AuthorizationProvider for FileAuthorizer {
         Ok(())
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct MemoryAuthorizer(Arc<Mutex<HashSet<VerifyingKey>>>);
-
-impl AuthorizationProvider for MemoryAuthorizer {
-    async fn is_authorized(&self, public_key: VerifyingKey) -> Result<bool, AuthorizerError> {
-        println!("{}", self.0.lock().await.contains(&public_key));
-        Ok(self.0.lock().await.contains(&public_key))
-    }
-
-    async fn authorize(&self, public_key: VerifyingKey) -> Result<(), AuthorizerError> {
-        self.0.lock().await.insert(public_key);
-        Ok(())
-    }
-}
-
-impl From<Vec<VerifyingKey>> for MemoryAuthorizer {
-    fn from(keys: Vec<VerifyingKey>) -> Self {
-        Self(Arc::new(Mutex::new(keys.into_iter().collect())))
-    }
-}
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
     use super::*;
     use ed25519_dalek::{SigningKey, VerifyingKey};
     use rand::rngs::OsRng;
@@ -148,137 +121,118 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_serialize_deserialize_verifying_key() {
-        let mut path = PathBuf::new();
-        path.push("authorized_keys.json");
-        let mut verifying_keys: Vec<String> = Vec::new();
-        let mut verifying_keys_deserialized: Vec<VerifyingKey> = Vec::new();
-        for _ in 0..10 {
-            let signing_key = generate_signing_key();
-            let verifying_key = generate_verifying_key(&signing_key);
-            let encoded = verifying_key.to_bytes();
-            let encoded_strig = prefix_hex::encode(encoded);
-            verifying_keys_deserialized.push(verifying_key);
-            verifying_keys.push(encoded_strig);
-        }
-        let serialized_keys = serde_json::to_string(&verifying_keys).unwrap();
-        fs::write(&path, serialized_keys).await.unwrap();
-
-        let file = FileAuthorizer::new(path.clone()).await.unwrap();
-        for key in verifying_keys_deserialized.iter() {
-            assert!(file.is_authorized(*key).await.unwrap());
-        }
-    }
-    #[tokio::test]
-    async fn test_memory_authorizer() {
-        let signing_key = generate_signing_key();
-        let public_key = generate_verifying_key(&signing_key);
-
-        let authorizer = MemoryAuthorizer::from(vec![public_key]);
-        assert!(authorizer.is_authorized(public_key).await.unwrap());
-
-        let new_signing_key = generate_signing_key();
-        let new_public_key = generate_verifying_key(&new_signing_key);
-        assert!(!authorizer.is_authorized(new_public_key).await.unwrap());
-
-        authorizer.authorize(new_public_key).await.unwrap();
-        assert!(authorizer.is_authorized(new_public_key).await.unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_file_authorizer() {
-        let signing_key = generate_signing_key();
-        let public_key = generate_verifying_key(&signing_key);
-
-        let file_path = PathBuf::from_str("authorized_keys.json").unwrap();
-
-        fs::write(&file_path, serde_json::to_string(&public_key).unwrap())
-            .await
-            .unwrap();
+    async fn test_authorize_new_key_in_empty_file() {
+        let temp_dir = tempdir().unwrap();
+        let file_path = temp_dir.path().join("authorized_keys.json");
 
         let authorizer = FileAuthorizer::new(file_path.clone()).await.unwrap();
+
+        let signing_key = generate_signing_key();
+        let public_key = generate_verifying_key(&signing_key);
+        authorizer.authorize(public_key).await.unwrap();
+
         assert!(authorizer.is_authorized(public_key).await.unwrap());
 
-        let new_signing_key = generate_signing_key();
-        let new_public_key = generate_verifying_key(&new_signing_key);
-        assert!(!authorizer.is_authorized(new_public_key).await.unwrap());
-
-        authorizer.authorize(new_public_key).await.unwrap();
-        let updated_authorizer = FileAuthorizer::new(file_path).await.unwrap();
-        assert!(updated_authorizer
-            .is_authorized(new_public_key)
-            .await
-            .unwrap());
+        temp_dir.close().unwrap();
     }
 
     #[tokio::test]
-    async fn test_read_only_file_authorizer() {
+    async fn test_authorize_existing_key() {
+        let temp_dir = tempdir().unwrap();
+        let file_path = temp_dir.path().join("authorized_keys.json");
+
+        let authorizer = FileAuthorizer::new(file_path.clone()).await.unwrap();
         let signing_key = generate_signing_key();
         let public_key = generate_verifying_key(&signing_key);
+        authorizer.authorize(public_key).await.unwrap();
 
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("authorized_keys.json");
+        // Try authorizing the same key again
+        authorizer.authorize(public_key).await.unwrap();
 
-        fs::write(
-            &file_path,
-            serde_json::to_string(&vec![public_key]).unwrap(),
-        )
-        .await
-        .unwrap();
-
-        let file_authorizer = FileAuthorizer::new(file_path).await.unwrap();
-        let memory_authorizer = MemoryAuthorizer::from(vec![]);
-
-        let authorizer =
-            Authorizer::ReadOnlyFile(file_authorizer.clone(), memory_authorizer.clone());
+        // Verify the key is still authorized
         assert!(authorizer.is_authorized(public_key).await.unwrap());
 
-        let new_signing_key = generate_signing_key();
-        let new_public_key = generate_verifying_key(&new_signing_key);
-        assert!(!authorizer.is_authorized(new_public_key).await.unwrap());
-
-        authorizer.authorize(new_public_key).await.unwrap();
-        assert!(memory_authorizer
-            .is_authorized(new_public_key)
-            .await
-            .unwrap());
-        assert!(!file_authorizer.is_authorized(new_public_key).await.unwrap());
+        temp_dir.close().unwrap();
     }
 
     #[tokio::test]
-    async fn test_open_authorizer() {
+    async fn test_is_authorized_with_empty_file() {
+        let temp_dir = tempdir().unwrap();
+        let file_path = temp_dir.path().join("authorized_keys.json");
+
+        // Create a new FileAuthorizer (this should create an empty file)
+        let authorizer = FileAuthorizer::new(file_path.clone()).await.unwrap();
+
+        // Generate a new key (but don't authorize it)
         let signing_key = generate_signing_key();
         let public_key = generate_verifying_key(&signing_key);
 
-        let authorizer = Authorizer::Open;
-        assert!(authorizer.is_authorized(public_key).await.unwrap());
+        // Verify that the key is not authorized
+        assert!(!authorizer.is_authorized(public_key).await.unwrap());
+
+        temp_dir.close().unwrap();
     }
 
     #[tokio::test]
-    async fn test_persistent_authorizer() {
-        let signing_key = generate_signing_key();
-        let public_key = generate_verifying_key(&signing_key);
+    async fn test_authorize_and_check_multiple_keys() {
+        let temp_dir = tempdir().unwrap();
+        let file_path = temp_dir.path().join("authorized_keys.json");
 
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("authorized_keys.json");
+        let authorizer = FileAuthorizer::new(file_path.clone()).await.unwrap();
 
-        fs::write(
-            &file_path,
-            serde_json::to_string(&vec![public_key]).unwrap(),
-        )
-        .await
-        .unwrap();
+        // Generate and authorize multiple keys
+        let mut keys = Vec::new();
+        for _ in 0..5 {
+            let signing_key = generate_signing_key();
+            let public_key = generate_verifying_key(&signing_key);
+            authorizer.authorize(public_key).await.unwrap();
+            keys.push(public_key);
+        }
 
-        let file_authorizer = FileAuthorizer::new(file_path).await.unwrap();
-        let authorizer = Authorizer::Persistent(file_authorizer.clone());
+        // Verify all keys are authorized
+        for key in keys.iter() {
+            assert!(authorizer.is_authorized(*key).await.unwrap());
+        }
 
-        assert!(authorizer.is_authorized(public_key).await.unwrap());
+        temp_dir.close().unwrap();
+    }
+    #[tokio::test]
+    async fn test_authorize_with_prepopulated_keys() {
+        let temp_dir = tempdir().unwrap();
+        let file_path = temp_dir.path().join("authorized_keys.json");
 
+        // Prepopulate the file with some keys
+        let mut initial_keys = Vec::new();
+        for _ in 0..3 {
+            let signing_key = generate_signing_key();
+            let public_key = generate_verifying_key(&signing_key);
+            initial_keys.push(prefix_hex::encode(public_key.to_bytes()));
+        }
+
+        // Serialize the keys and write them to the file
+        let serialized_keys = serde_json::to_string(&initial_keys).unwrap();
+        fs::write(&file_path, serialized_keys).await.unwrap();
+
+        // Create a FileAuthorizer that will use the prepopulated file
+        let authorizer = FileAuthorizer::new(file_path.clone()).await.unwrap();
+
+        // Verify that the initial keys are authorized
+        for encoded_key in &initial_keys {
+            let verifying_key_bytes = prefix_hex::decode::<Vec<u8>>(encoded_key).unwrap();
+            let verifying_key =
+                VerifyingKey::from_bytes(&verifying_key_bytes.try_into().unwrap()).unwrap();
+            assert!(authorizer.is_authorized(verifying_key).await.unwrap());
+        }
+
+        // Add a new key and verify it
         let new_signing_key = generate_signing_key();
         let new_public_key = generate_verifying_key(&new_signing_key);
-        assert!(!authorizer.is_authorized(new_public_key).await.unwrap());
-
         authorizer.authorize(new_public_key).await.unwrap();
-        assert!(file_authorizer.is_authorized(new_public_key).await.unwrap());
+
+        // Verify that the new key is authorized
+        assert!(authorizer.is_authorized(new_public_key).await.unwrap());
+
+        // Clean up
+        temp_dir.close().unwrap();
     }
 }

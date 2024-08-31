@@ -1,7 +1,7 @@
 use clap::Parser;
-use prover::{errors::ServerError, server::start, Args};
+use prover::{errors::ProverError, server::start, Args};
 #[tokio::main]
-async fn main() -> Result<(), ServerError> {
+async fn main() -> Result<(), ProverError> {
     let args = Args::parse();
     start(args).await?;
     Ok(())

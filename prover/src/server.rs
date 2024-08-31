@@ -1,11 +1,13 @@
 use crate::auth::auth;
-use crate::auth::authorizer::{Authorizer, FileAuthorizer};
+use crate::auth::auth_errors::AuthorizerError;
+use crate::auth::authorizer::{AuthorizationProvider, Authorizer, FileAuthorizer};
+use crate::errors::ProverError;
 use crate::extractors::workdir::TempDirHandle;
 use crate::threadpool::ThreadPool;
 use crate::utils::job::{get_job, JobStore};
 use crate::utils::shutdown::shutdown_signal;
 use crate::verifier::root;
-use crate::{errors::ServerError, prove, Args};
+use crate::{prove, Args};
 use axum::{
     middleware,
     routing::{get, post},
@@ -32,7 +34,7 @@ pub struct AppState {
     pub authorizer: Authorizer,
 }
 
-pub async fn start(args: Args) -> Result<(), ServerError> {
+pub async fn start(args: Args) -> Result<(), ProverError> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -40,24 +42,17 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
-    let authorizer = match args.authorized_keys_path {
-        Some(path) => {
-            tracing::info!("Using authorized keys from file");
-            Authorizer::Persistent(FileAuthorizer::new(path).await.unwrap()) //TODO: Handle error
-        }
-        None => {
-            tracing::info!("Using authorized keys from command line");
-            let authorized_keys = args.authorized_keys.unwrap_or_default();
-            let mut verifying_keys: Vec<VerifyingKey> = Vec::new();
-            for key in authorized_keys.iter() {
-                tracing::info!("Authorized key: {}", key);
-                let key_bytes = prefix_hex::decode::<Vec<u8>>(key).unwrap();
-                verifying_keys
-                    .push(VerifyingKey::from_bytes(&key_bytes.try_into().unwrap()).unwrap());
-            }
-            Authorizer::Memory(verifying_keys.into())
-        }
-    };
+
+    let authorizer =
+        Authorizer::Persistent(FileAuthorizer::new(args.authorized_keys_path.clone()).await?);
+
+    for key in args.authorized_keys.iter() {
+        let verifying_key_bytes = prefix_hex::decode::<Vec<u8>>(key)
+            .map_err(|e| AuthorizerError::PrefixHexConversionError(e.to_string()))?;
+        let verifying_key = VerifyingKey::from_bytes(&verifying_key_bytes.try_into().unwrap())?;
+        authorizer.authorize(verifying_key).await?;
+    }
+
     let app_state = AppState {
         message_expiration_time: args.message_expiration_time,
         session_expiration_time: args.session_expiration_time,
@@ -78,7 +73,7 @@ pub async fn start(args: Args) -> Result<(), ServerError> {
 
     let address: SocketAddr = format!("{}:{}", args.host, args.port)
         .parse()
-        .map_err(ServerError::AddressParse)?;
+        .map_err(ProverError::AddressParse)?;
 
     let listener = TcpListener::bind(address).await?;
 
