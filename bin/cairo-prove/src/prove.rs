@@ -1,6 +1,5 @@
 use crate::errors::ProveErrors;
 use crate::validate_input;
-use crate::validate_input_for_vec;
 use crate::Args;
 use crate::CairoVersion;
 use common::{
@@ -33,7 +32,7 @@ pub async fn prove(args: Args, sdk: ProverSDK) -> Result<String, ProveErrors> {
                     let input = std::fs::read_to_string(input_path)?;
                     validate_input(&input)?
                 }
-                None => validate_input_for_vec(args.clone().program_input)?,
+                None => args.program_input
             };
             let program_serialized: CairoCompiledProgram = serde_json::from_str(&program)?;
             let data = CairoProverInput {

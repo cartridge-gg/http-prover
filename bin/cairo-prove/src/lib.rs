@@ -46,7 +46,7 @@ pub struct Args {
     )]
     pub program_input_path: Option<PathBuf>,
     #[arg(long, env, value_delimiter = ',')]
-    pub program_input: Vec<String>,
+    pub program_input: Vec<Felt>,
     #[arg(long, env)]
     pub program_output: PathBuf,
     #[arg(long, env)]
@@ -55,36 +55,8 @@ pub struct Args {
     pub wait: bool,
 }
 
-pub fn validate_input_for_vec(input: Vec<String>) -> Result<Vec<Felt>, ProveErrors> {
-    if input.is_empty() {
-        return Err(ProveErrors::Custom(
-            "Input is empty, input must be a array of felt in format [felt,...,felt]".to_string(),
-        ));
-    }
-    let mut args = Vec::new();
-    for num in input {
-        let num = num
-            .replace(['[', ']', ' ', '\n'], "");
-        match num.parse::<Felt>() {
-            Ok(num) => args.push(num),
-            Err(_) => {
-                return Err(ProveErrors::Custom(
-                    "Input contains non-numeric characters or spaces".to_string(),
-                ))
-            }
-        }
-    }
-    Ok(args)
-}
 fn validate_input(input: &str) -> Result<Vec<Felt>, ProveErrors> {
-    if !input.starts_with('[') || !input.ends_with(']') {
-        return Err(ProveErrors::Custom(
-            "Input must start with '[' and end with ']'".to_string(),
-        ));
-    }
-    let inner = &input[1..input.len() - 1];
-
-    let parts: Vec<&str> = inner.split(',').collect();
+    let parts: Vec<&str> = input.split(',').collect();
 
     let mut felts = Vec::new();
     for part in parts {
@@ -104,7 +76,7 @@ mod test {
     use super::*;
     #[test]
     fn test_validate_input() -> Result<(), ProveErrors> {
-        let input = "[1,2,3,4,5]";
+        let input = "1,2,3,4,5";
         let result = validate_input(input)?;
         assert_eq!(
             result,
@@ -120,7 +92,7 @@ mod test {
     }
     #[test]
     fn test_validate_input_with_hex() -> Result<(), ProveErrors> {
-        let input = "[0x1,0x2,0x3,0x4,0x5]";
+        let input = "0x1,0x2,0x3,0x4,0x5";
         let result = validate_input(input)?;
         assert_eq!(
             result,
@@ -138,6 +110,7 @@ mod test {
     fn test_validate_input_non_numeric() -> Result<(), ProveErrors> {
         let input = "[1,2,a,4,5]";
         let result = validate_input(input);
+        println!("{:?}", result);
         assert!(result.is_err());
         Ok(())
     }
