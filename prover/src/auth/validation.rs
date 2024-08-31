@@ -140,7 +140,8 @@ mod tests {
             session_key: session_public_key,
             nonce: nonce_string.clone(),
         };
-        let signed_message = signing_private_key.sign(serde_json::to_string(&message).unwrap().as_bytes());
+        let signed_message =
+            signing_private_key.sign(serde_json::to_string(&message).unwrap().as_bytes());
         let payload = ValidateSignatureRequest {
             message,
             signature: signed_message,

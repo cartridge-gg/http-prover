@@ -8,5 +8,5 @@ pub struct JWTResponse {
     #[serde_as(as = "DisplayFromStr")]
     pub jwt_token: String,
     pub expiration: u64,
-    pub session_key: Option<VerifyingKey>
+    pub session_key: Option<VerifyingKey>,
 }

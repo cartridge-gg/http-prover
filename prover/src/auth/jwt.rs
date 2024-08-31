@@ -85,7 +85,12 @@ impl Keys {
         }
     }
 }
-pub fn encode_jwt(sub: &str, exp: usize, keys: Keys,session_key:VerifyingKey) -> Result<String, ProverError> {
+pub fn encode_jwt(
+    sub: &str,
+    exp: usize,
+    keys: Keys,
+    session_key: VerifyingKey,
+) -> Result<String, ProverError> {
     let claims = Claims {
         sub: sub.to_owned(),
         exp,

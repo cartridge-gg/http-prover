@@ -8,7 +8,7 @@ pub struct ValidateSignatureRequest {
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Message {
-    pub session_key:VerifyingKey,
+    pub session_key: VerifyingKey,
     pub nonce: String,
 }
 #[derive(Debug, Serialize, Deserialize)]

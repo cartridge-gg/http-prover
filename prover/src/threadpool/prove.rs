@@ -6,12 +6,12 @@ use crate::utils::{
 };
 use serde_json::Value;
 use starknet_types_core::felt::Felt;
-use tracing::trace;
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use tempfile::TempDir;
 use tokio::process::Command;
+use tracing::trace;
 
 pub async fn prove(
     job_id: u64,
