@@ -16,7 +16,7 @@ pub async fn validate_signature(
 ) -> Result<impl IntoResponse, ProverError> {
     tracing::info!("Validating signature");
     let nonces = state.nonces.lock().await;
-    let public_key = nonces.get(&payload.nonce);
+    let public_key = nonces.get(&payload.message.nonce);
     let public_key = match public_key {
         Some(public_key) => public_key,
         None => {
@@ -27,7 +27,8 @@ pub async fn validate_signature(
     };
     tracing::info!("Public key found for nonce");
     let encoded_public_key = prefix_hex::encode(public_key.to_bytes());
-    let verification = match public_key.verify(payload.nonce.as_bytes(), &payload.signature) {
+    let serialized_message = serde_json::to_string(&payload.message)?;
+    let verification = match public_key.verify(serialized_message.as_bytes(), &payload.signature) {
         Ok(_) => true,
         Err(_) => false,
     };
@@ -41,6 +42,7 @@ pub async fn validate_signature(
         &encoded_public_key,
         expiration.timestamp() as usize,
         Keys::new(state.jwt_secret_key.clone().as_bytes()),
+        payload.message.session_key,
     )?;
     tracing::info!("JWT token generated");
     let cookie_value = format!(
@@ -59,17 +61,17 @@ pub async fn validate_signature(
         Json(JWTResponse {
             jwt_token: token,
             expiration: expiration.timestamp() as u64,
+            session_key: Some(payload.message.session_key),
         }),
     ))
 }
-
 #[cfg(test)]
 mod tests {
     use std::{collections::HashMap, sync::Arc};
 
     use axum::extract::State;
     use axum::Json;
-    use common::requests::ValidateSignatureRequest;
+    use common::requests::{Message, ValidateSignatureRequest};
     use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
     use rand::rngs::OsRng;
     use tokio::sync::Mutex;
@@ -95,10 +97,16 @@ mod tests {
         let nonce_string = nonce.to_string();
         let private_key = generate_signing_key();
         let public_key = generate_verifying_key(&private_key);
-        let signature = private_key.sign(nonce_string.as_bytes());
-        let payload = ValidateSignatureRequest {
+        let session_private_key = generate_signing_key();
+        let session_public_key = generate_verifying_key(&session_private_key);
+        let message = Message {
+            session_key: session_public_key,
             nonce: nonce_string.clone(),
-            signature,
+        };
+        let signed_message = private_key.sign(serde_json::to_string(&message).unwrap().as_bytes());
+        let payload = ValidateSignatureRequest {
+            message,
+            signature: signed_message,
         };
         let nonces: Arc<Mutex<HashMap<String, VerifyingKey>>> =
             Arc::new(Mutex::new(HashMap::new()));
@@ -126,10 +134,16 @@ mod tests {
         let signing_private_key = generate_signing_key();
         let false_private_key = generate_signing_key();
         let false_public_key = generate_verifying_key(&false_private_key);
-        let signature = signing_private_key.sign(nonce_string.as_bytes());
-        let payload = ValidateSignatureRequest {
+        let session_private_key = generate_signing_key();
+        let session_public_key = generate_verifying_key(&session_private_key);
+        let message = Message {
+            session_key: session_public_key,
             nonce: nonce_string.clone(),
-            signature,
+        };
+        let signed_message = signing_private_key.sign(serde_json::to_string(&message).unwrap().as_bytes());
+        let payload = ValidateSignatureRequest {
+            message,
+            signature: signed_message,
         };
         let nonces: Arc<Mutex<HashMap<String, VerifyingKey>>> =
             Arc::new(Mutex::new(HashMap::new()));
@@ -162,10 +176,16 @@ mod tests {
         let nonce = Nonce::new(32);
         let nonce_string = nonce.to_string();
         let private_key = generate_signing_key();
-        let signature = private_key.sign(nonce_string.as_bytes());
-        let payload = ValidateSignatureRequest {
+        let session_private_key = generate_signing_key();
+        let session_public_key = generate_verifying_key(&session_private_key);
+        let message = Message {
+            session_key: session_public_key,
             nonce: nonce_string.clone(),
-            signature,
+        };
+        let signed_message = private_key.sign(serde_json::to_string(&message).unwrap().as_bytes());
+        let payload = ValidateSignatureRequest {
+            message,
+            signature: signed_message,
         };
         let nonces: Arc<Mutex<HashMap<String, VerifyingKey>>> =
             Arc::new(Mutex::new(HashMap::new())); // Empty nonces map
@@ -181,10 +201,12 @@ mod tests {
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
-        let _error_message = match result {
-            Err(ProverError::CustomError(message)) => message,
-            _ => panic!("Unexpected result"),
-        };
+        assert!(result.is_err());
+        if let Err(ProverError::CustomError(message)) = result {
+            assert_eq!(message, "Public key for nonce not found".to_string());
+        } else {
+            panic!("Unexpected error type");
+        }
     }
 
     #[tokio::test]
@@ -192,9 +214,15 @@ mod tests {
         let nonce = Nonce::new(32);
         let nonce_string = nonce.to_string();
         let public_key = generate_verifying_key(&generate_signing_key());
+        let session_private_key = generate_signing_key();
+        let session_public_key = generate_verifying_key(&session_private_key);
+        let message = Message {
+            session_key: session_public_key,
+            nonce: nonce_string.clone(),
+        };
 
         let payload = ValidateSignatureRequest {
-            nonce: nonce_string.clone(),
+            message,
             signature: Signature::from_bytes(&[0; 64]), // Invalid signature
         };
         let nonces: Arc<Mutex<HashMap<String, VerifyingKey>>> =

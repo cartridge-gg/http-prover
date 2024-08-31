@@ -1,9 +1,9 @@
 use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk::ProverSDK};
 use common::{
     models::JWTResponse,
-    requests::{GenerateNonceRequest, ValidateSignatureRequest},
+    requests::{GenerateNonceRequest, Message, ValidateSignatureRequest},
 };
-use ed25519_dalek::{Signature, Signer, VerifyingKey};
+use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use reqwest::{cookie::Jar, Client};
 use serde_json::Value;
 use std::sync::Arc;
@@ -15,6 +15,7 @@ pub struct ProverSDKBuilder {
     base_url: Url,
     auth: Url,
     signing_key: Option<ProverAccessKey>,
+    session_key: Option<SigningKey>,
     jwt_token: Option<String>,
 }
 impl ProverSDKBuilder {
@@ -24,6 +25,7 @@ impl ProverSDKBuilder {
             auth,
             base_url,
             signing_key: None,
+            session_key: None,
             jwt_token: None,
         }
     }
@@ -59,12 +61,12 @@ impl ProverSDKBuilder {
     }
     pub async fn validate_signature(
         &self,
-        signed_nonce: Signature,
-        nonce: String,
+        signed_message: Signature,
+        message: Message,
     ) -> Result<JWTResponse, SdkErrors> {
         let request = ValidateSignatureRequest {
-            signature: signed_nonce,
-            nonce,
+            signature: signed_message,
+            message: message,
         };
         let response = self
             .client
@@ -90,6 +92,7 @@ impl ProverSDKBuilder {
         Ok(JWTResponse {
             jwt_token: jwt_token,
             expiration: expiration,
+            session_key: self.session_key.as_ref().map(|k| k.verifying_key()),
         })
     }
 
@@ -100,7 +103,7 @@ impl ProverSDKBuilder {
         Ok(self)
     }
 
-    async fn get_jwt_token(&self) -> Result<JWTResponse, SdkErrors> {
+    async fn get_jwt_token(&mut self) -> Result<JWTResponse, SdkErrors> {
         let signing_key = self
             .signing_key
             .as_ref()
@@ -109,10 +112,19 @@ impl ProverSDKBuilder {
         let public_key = signing_key.0.verifying_key();
 
         let nonce = self.get_nonce(&public_key).await?;
-
-        let signed_nonce = signing_key.0.sign(nonce.as_bytes());
-
-        self.validate_signature(signed_nonce, nonce).await
+        self.session_key = Some(ProverAccessKey::generate().0);
+        let session_public_key = self
+            .session_key
+            .as_ref()
+            .ok_or(SdkErrors::SigningKeyNotFound)?
+            .verifying_key();
+        let message = Message {
+            session_key: session_public_key,
+            nonce: nonce,
+        };
+        let message_string = serde_json::to_string(&message)?;
+        let signed_message = signing_key.0.sign(message_string.as_bytes());
+        self.validate_signature(signed_message, message).await
     }
 
     pub fn build(self) -> Result<ProverSDK, SdkErrors> {

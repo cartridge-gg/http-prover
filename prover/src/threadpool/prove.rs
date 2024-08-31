@@ -6,6 +6,7 @@ use crate::utils::{
 };
 use serde_json::Value;
 use starknet_types_core::felt::Felt;
+use tracing::trace;
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -105,6 +106,7 @@ pub async fn cairo0_run(
     program_input_path: PathBuf,
     program_path: PathBuf,
 ) -> Result<(), ProverError> {
+    trace!("Running cairo0-run");
     let mut command = Command::new("cairo-run");
     command
         .arg("--trace_file")

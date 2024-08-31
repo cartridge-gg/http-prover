@@ -5,6 +5,7 @@ use axum::{
     extract::{FromRef, FromRequestParts},
     http::{header::COOKIE, request::Parts},
 };
+use ed25519_dalek::VerifyingKey;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
@@ -64,6 +65,7 @@ where
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
+    pub session_key: VerifyingKey,
 }
 impl Display for Claims {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -83,10 +85,11 @@ impl Keys {
         }
     }
 }
-pub fn encode_jwt(sub: &str, exp: usize, keys: Keys) -> Result<String, ProverError> {
+pub fn encode_jwt(sub: &str, exp: usize, keys: Keys,session_key:VerifyingKey) -> Result<String, ProverError> {
     let claims = Claims {
         sub: sub.to_owned(),
         exp,
+        session_key,
     };
     encode(&Header::default(), &claims, &keys.encoding)
         .map_err(|e| ProverError::InternalServerError(format!("JWT generation failed: {}", e)))
