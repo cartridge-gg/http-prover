@@ -25,7 +25,7 @@ pub struct Args {
     pub jwt_secret_key: String,
     #[arg(long, env, default_value = "authorized_keys.json")]
     pub authorized_keys_path: PathBuf,
-    #[arg(long, env)]
+    #[arg(long, env, value_delimiter = ',')]
     pub authorized_keys: Vec<String>,
     #[arg(long, env, default_value = "4")]
     pub num_workes: usize,

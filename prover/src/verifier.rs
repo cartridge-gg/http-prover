@@ -5,6 +5,7 @@ use crate::{
     utils::job::{create_job, update_job_status, JobStatus, JobStore},
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use serde_json::json;
 use std::process::Command;
 use tempfile::TempDir;
 
@@ -24,10 +25,10 @@ pub async fn root(
         }
     });
 
-    (
-        StatusCode::ACCEPTED,
-        format!("Task started, job id: {}", job_id),
-    )
+    let body = json!({
+        "job_id": job_id
+    });
+    (StatusCode::ACCEPTED, body.to_string())
 }
 
 pub async fn verify_proof(
@@ -58,19 +59,13 @@ pub async fn verify_proof(
     std::fs::remove_file(&file).map_err(|e| format!("Failed to remove proof file: {}", e))?;
 
     // Check if the command was successful
-    if status.success() {
-        update_job_status(
-            job_id,
-            &job_store,
-            JobStatus::Completed,
-            Some(format!(
-                "Proof verified successfully, exit status: {}",
-                status
-            )),
-        )
-        .await;
-        Ok(())
-    } else {
-        Err(format!("Verifier failed with exit status: {}", status))
-    }
+
+    update_job_status(
+        job_id,
+        &job_store,
+        JobStatus::Completed,
+        Some(status.success().to_string()),
+    )
+    .await;
+    Ok(())
 }
