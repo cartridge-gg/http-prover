@@ -27,4 +27,8 @@ pub struct Args {
     pub authorized_keys_path: PathBuf,
     #[arg(long, env)]
     pub authorized_keys: Vec<String>,
+    #[arg(long, env, default_value = "4")]
+    pub num_workes: usize,
+    #[arg(long, env)]
+    pub admin_key: String,
 }

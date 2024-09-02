@@ -1,4 +1,5 @@
-use common::ProverInput;
+use common::{requests::AddKeyRequest, ProverInput};
+use ed25519_dalek::{ed25519::signature::SignerMut, VerifyingKey};
 use reqwest::{Client, Response};
 use url::Url;
 
@@ -11,6 +12,7 @@ pub struct ProverSDK {
     pub prover_cairo: Url,
     pub verify: Url,
     pub get_job: Url,
+    pub register: Url,
     pub authority: ProverAccessKey,
 }
 
@@ -71,13 +73,28 @@ impl ProverSDK {
         let url = format!("{}/{}", self.get_job.clone().as_str(), job_id);
         let response = self.client.get(url).send().await?;
 
-        // Check if the response status is successful
         if !response.status().is_success() {
             let response_data: String = response.text().await?;
             tracing::error!("{}", response_data);
             return Err(SdkErrors::GetJobResponseError(response_data));
         }
-        // Parse the response data
         Ok(response)
     }
+    pub async fn register(&mut self, key:VerifyingKey)->Result<(),SdkErrors>{
+        let signature = self.authority.0.sign(key.as_bytes());
+        let request = AddKeyRequest{
+            signature,
+            new_key:key,
+            authority:self.authority.0.verifying_key(),
+        };
+        let response = self.client.post(self.register.clone()).json(&request).send().await?;
+        if !response.status().is_success() {
+            return Err(SdkErrors::RegisterResponseError(format!(
+                "Failed to register key with status code: {}",
+                response.status(),
+            )));
+        }
+        Ok(())
+        }
+
 }

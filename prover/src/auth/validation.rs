@@ -117,6 +117,8 @@ mod tests {
             thread_pool: Arc::new(Mutex::new(ThreadPool::new(1))),
             nonces,
             authorizer: Authorizer::Open,
+            admin_key:generate_verifying_key(&generate_signing_key())
+
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
@@ -158,6 +160,8 @@ mod tests {
             thread_pool: Arc::new(Mutex::new(ThreadPool::new(1))),
             nonces,
             authorizer: Authorizer::Open,
+            admin_key:generate_verifying_key(&generate_signing_key())
+
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
@@ -196,6 +200,7 @@ mod tests {
             thread_pool: Arc::new(Mutex::new(ThreadPool::new(1))),
             nonces,
             authorizer: Authorizer::Open,
+            admin_key:generate_verifying_key(&generate_signing_key())
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
@@ -235,6 +240,8 @@ mod tests {
             thread_pool: Arc::new(Mutex::new(ThreadPool::new(1))),
             nonces,
             authorizer: Authorizer::Open,
+            admin_key:generate_verifying_key(&generate_signing_key())
+
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["prover", "common", "prover-sdk", "bin/cairo-prove","bin/keygen"]
+members = ["prover", "common", "prover-sdk", "bin/cairo-prove","bin/keygen","bin/register"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"

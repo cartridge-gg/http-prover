@@ -159,6 +159,7 @@ impl ProverSDKBuilder {
             prover_cairo: self.base_url.join("/prove/cairo")?,
             verify: self.base_url.join("/verify")?,
             get_job: self.base_url.join("/get-job")?,
+            register: self.base_url.join("/register")?,
             authority: signing_key,
         })
     }

@@ -91,6 +91,14 @@ impl AuthorizationProvider for FileAuthorizer {
         let mut serialized_keys: Vec<String> =
             serde_json::from_str(&contents).unwrap_or_else(|_| Vec::new());
 
+        for key in serialized_keys.iter() {
+            let verifying_key_bytes = prefix_hex::decode::<Vec<u8>>(key)
+                .map_err(|e| AuthorizerError::PrefixHexConversionError(e.to_string()))?;
+            let verifying_key = VerifyingKey::from_bytes(&verifying_key_bytes.try_into()?)?;
+            if verifying_key == public_key {
+                return Ok(());
+            }
+        }
         serialized_keys.push(prefix_hex::encode(public_key.to_bytes()));
         let new_contents = serde_json::to_string(&serialized_keys)
             .map_err(AuthorizerError::FormatError)?

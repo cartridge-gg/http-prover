@@ -1,7 +1,5 @@
 use crate::{
-    extractors::workdir::TempDirHandle,
-    server::AppState,
-    utils::job::{create_job, update_job_status, JobStatus, JobStore},
+    auth::jwt::Claims, extractors::workdir::TempDirHandle, server::AppState, utils::job::{create_job, update_job_status, JobStatus, JobStore}
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use std::process::Command;
@@ -10,6 +8,7 @@ use tempfile::TempDir;
 pub async fn root(
     State(app_state): State<AppState>,
     TempDirHandle(dir): TempDirHandle,
+    _claims: Claims,
     Json(proof): Json<String>,
 ) -> impl IntoResponse {
     let job_id = create_job(&app_state.job_store).await;

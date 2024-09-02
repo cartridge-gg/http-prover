@@ -15,3 +15,10 @@ pub struct Message {
 pub struct GenerateNonceRequest {
     pub public_key: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AddKeyRequest {
+    pub signature: Signature,
+    pub authority: VerifyingKey,
+    pub new_key: VerifyingKey,
+}

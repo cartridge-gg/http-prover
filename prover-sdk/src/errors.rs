@@ -26,4 +26,6 @@ pub enum SdkErrors {
     JWTExpirationNotFound,
     #[error("Signing key not found")]
     SigningKeyNotFound,
+    #[error("Register response error: {0}")]
+    RegisterResponseError(String),
 }
