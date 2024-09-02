@@ -1,4 +1,4 @@
-# Cairo Proving System
+# Http-Prover
 
 This repository contains a comprehensive toolset for proving computations using the Cairo language. The repository includes a server, an SDK for interacting with the server, a binary `cairo-prove` for executing proofs, and helper binaries such as `keygen` and `register`.
 
