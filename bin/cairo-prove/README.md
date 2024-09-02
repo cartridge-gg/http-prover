@@ -47,14 +47,14 @@ Each of these arguments can be set via command-line flags or environment variabl
 
 The application expects input in the form of a file that contains data formatted as an array of strings or integers. The format should adhere to the following guidelines:
 
-- The input file should contain a single array of values, enclosed in square brackets `[]`.
+- The input file should contain a single array of values
 - Values should be separated by commas `,` without spaces.
-- Each value should be either a string or a numeric type that can be parsed into a `Felt`.
+- Each value should be either a hex or a numeric type that can be parsed into a `Felt`.
 
 **Example Input:**
 
 ```plaintext
-[1,2,3,4,5]
+1,2,3,4,5
 ```
 ## Input for Cairo0
 The application expects input in the form of a json file that contains valid json object.

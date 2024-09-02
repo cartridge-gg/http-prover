@@ -17,3 +17,4 @@ serde_json.workspace = true
 reqwest_cookie_store.workspace = true
 base64.workspace = true
 starknet-types-core.workspace = true
+tokio.workspace = true

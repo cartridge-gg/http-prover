@@ -57,9 +57,10 @@ pub struct Args {
 
 fn validate_input(input: &str) -> Result<Vec<Felt>, ProveErrors> {
     let parts: Vec<&str> = input.split(',').collect();
-
+    
     let mut felts = Vec::new();
     for part in parts {
+        let part = part.replace(['[','\n',']'], "");
         match part.trim().parse::<Felt>() {
             Ok(num) => felts.push(num),
             Err(_) => {
@@ -92,7 +93,7 @@ mod test {
     }
     #[test]
     fn test_validate_input_with_hex() -> Result<(), ProveErrors> {
-        let input = "0x1,0x2,0x3,0x4,0x5";
+        let input = "[0x1,0x2,0x3,0x4,0x5]";
         let result = validate_input(input)?;
         assert_eq!(
             result,
