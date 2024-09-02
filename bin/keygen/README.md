@@ -7,7 +7,7 @@ This is a simple command-line tool for generating new keys using the Prover SDK.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/chudkowsky/http_prover_refactored.git
+git clone https://github.com/cartridge-gg/http-prover.git
 cd prover-key-generation
 ```
 
