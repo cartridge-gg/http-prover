@@ -57,10 +57,10 @@ pub struct Args {
 
 fn validate_input(input: &str) -> Result<Vec<Felt>, ProveErrors> {
     let parts: Vec<&str> = input.split(',').collect();
-    
+
     let mut felts = Vec::new();
     for part in parts {
-        let part = part.replace(['[','\n',']'], "");
+        let part = part.replace(['[', '\n', ']'], "");
         match part.trim().parse::<Felt>() {
             Ok(num) => felts.push(num),
             Err(_) => {
