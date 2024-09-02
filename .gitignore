@@ -1,3 +1,5 @@
 target
 prover/target
 .cargo
+proof.json
+authorized_keys.json
