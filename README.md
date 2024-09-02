@@ -65,7 +65,6 @@ The common library provides shared utilities and data structures used across the
 
 - **Directory:** `common`
 - **Description:** Includes modules for handling prover inputs, requests, and shared models.
-- **Inner README:** [Common Library README](common/README.md)
 
 ## Examples
 
