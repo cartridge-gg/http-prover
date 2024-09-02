@@ -8,7 +8,6 @@ This is a simple command-line tool for generating new keys using the Prover SDK.
 
 ```bash
 git clone https://github.com/cartridge-gg/http-prover.git
-cd prover-key-generation
 ```
 
 ## Usage
