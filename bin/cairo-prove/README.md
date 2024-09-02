@@ -18,7 +18,7 @@ This application is a command-line tool designed to run the SDK for http-prover.
 To install the application, clone this repository and build the binary:
 
 ```bash
-cargo install --git https://github.com/chudkowsky/http_prover_refactored.git cairo-prove
+cargo install --git https://github.com/cartridge-gg/http-prover.git cairo-prove
 ```
 ## Command-Line Arguments
 ### The following command-line arguments and environment variables are available to configure the behavior of the application:
