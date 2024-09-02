@@ -12,10 +12,7 @@ impl ProverAccessKey {
 
     pub fn from_hex_string(hex_string: &str) -> Result<Self, SdkErrors> {
         let bytes = prefix_hex::decode::<Vec<u8>>(&hex_string).map_err(|e| {
-            SdkErrors::PrefixError(format!(
-                "Failed to decode string to bytes {}",
-                e
-            ))
+            SdkErrors::PrefixError(format!("Failed to decode string to bytes {}", e))
         })?;
         let mut array = [0u8; 32];
         array.copy_from_slice(&bytes);

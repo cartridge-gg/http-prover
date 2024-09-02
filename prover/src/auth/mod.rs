@@ -2,15 +2,15 @@ pub mod auth_errors;
 pub mod authorizer;
 pub mod jwt;
 pub mod nonce;
-pub mod validation;
 pub mod register;
+pub mod validation;
 use crate::server::AppState;
-use register::register;
 use axum::{
     routing::{get, post},
     Router,
 };
 use nonce::generate_nonce;
+use register::register;
 use validation::validate_signature;
 
 pub fn auth(app_state: AppState) -> Router {

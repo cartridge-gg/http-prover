@@ -5,7 +5,7 @@ use tokio::{fs::File, io::AsyncReadExt};
 
 pub(crate) trait AuthorizationProvider {
     async fn is_authorized(&self, public_key: VerifyingKey) -> Result<bool, AuthorizerError>;
-    
+
     async fn authorize(&self, public_key: VerifyingKey) -> Result<(), AuthorizerError>;
 }
 

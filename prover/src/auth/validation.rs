@@ -28,7 +28,9 @@ pub async fn validate_signature(
     tracing::info!("Public key found for nonce");
     let encoded_public_key = prefix_hex::encode(public_key.to_bytes());
     let serialized_message = serde_json::to_string(&payload.message)?;
-    let verification = public_key.verify(serialized_message.as_bytes(), &payload.signature).is_ok();
+    let verification = public_key
+        .verify(serialized_message.as_bytes(), &payload.signature)
+        .is_ok();
     if !verification {
         return Err(ProverError::CustomError("Signature is invalid".to_string()));
     }
@@ -117,8 +119,7 @@ mod tests {
             thread_pool: Arc::new(Mutex::new(ThreadPool::new(1))),
             nonces,
             authorizer: Authorizer::Open,
-            admin_key:generate_verifying_key(&generate_signing_key())
-
+            admin_key: generate_verifying_key(&generate_signing_key()),
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
@@ -160,8 +161,7 @@ mod tests {
             thread_pool: Arc::new(Mutex::new(ThreadPool::new(1))),
             nonces,
             authorizer: Authorizer::Open,
-            admin_key:generate_verifying_key(&generate_signing_key())
-
+            admin_key: generate_verifying_key(&generate_signing_key()),
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
@@ -200,7 +200,7 @@ mod tests {
             thread_pool: Arc::new(Mutex::new(ThreadPool::new(1))),
             nonces,
             authorizer: Authorizer::Open,
-            admin_key:generate_verifying_key(&generate_signing_key())
+            admin_key: generate_verifying_key(&generate_signing_key()),
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
@@ -240,8 +240,7 @@ mod tests {
             thread_pool: Arc::new(Mutex::new(ThreadPool::new(1))),
             nonces,
             authorizer: Authorizer::Open,
-            admin_key:generate_verifying_key(&generate_signing_key())
-
+            admin_key: generate_verifying_key(&generate_signing_key()),
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;

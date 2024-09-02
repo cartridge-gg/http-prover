@@ -23,7 +23,7 @@ pub struct Args {
     pub session_expiration_time: usize,
     #[arg(long, short, env)]
     pub jwt_secret_key: String,
-    #[arg(long, env,default_value = "authorized_keys.json")]
+    #[arg(long, env, default_value = "authorized_keys.json")]
     pub authorized_keys_path: PathBuf,
     #[arg(long, env)]
     pub authorized_keys: Vec<String>,

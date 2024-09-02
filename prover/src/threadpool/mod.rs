@@ -81,10 +81,7 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(
-        id: usize,
-        receiver: ReceiverType,
-    ) -> Worker {
+    fn new(id: usize, receiver: ReceiverType) -> Worker {
         let thread = spawn(async move {
             loop {
                 let message = receiver.lock().await.recv().await;

@@ -51,7 +51,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         .map_err(|e| AuthorizerError::PrefixHexConversionError(e.to_string()))?;
     let admin_key = VerifyingKey::from_bytes(&admin_key_bytes.try_into().unwrap())?;
 
-    authorizer.authorize(admin_key.clone()).await?;    
+    authorizer.authorize(admin_key.clone()).await?;
     for key in args.authorized_keys.iter() {
         let verifying_key_bytes = prefix_hex::decode::<Vec<u8>>(key)
             .map_err(|e| AuthorizerError::PrefixHexConversionError(e.to_string()))?;

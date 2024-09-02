@@ -22,7 +22,7 @@ pub async fn prove(args: Args, sdk: ProverSDK) -> Result<String, ProveErrors> {
             let data = Cairo0ProverInput {
                 program: program_serialized,
                 layout: args.layout,
-                program_input
+                program_input,
             };
             sdk.prove_cairo0(data).await?
         }
@@ -32,7 +32,7 @@ pub async fn prove(args: Args, sdk: ProverSDK) -> Result<String, ProveErrors> {
                     let input = std::fs::read_to_string(input_path)?;
                     validate_input(&input)?
                 }
-                None => args.program_input
+                None => args.program_input,
             };
             let program_serialized: CairoCompiledProgram = serde_json::from_str(&program)?;
             let data = CairoProverInput {

@@ -23,7 +23,7 @@ async fn main() {
 
     let key = ProverAccessKey::from_hex_string(&args.private_key).unwrap();
 
-    let mut sdk = ProverSDK::new(args.url,key)
+    let mut sdk = ProverSDK::new(args.url, key)
         .await
         .expect("Failed to create SDK instance");
 

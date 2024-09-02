@@ -80,14 +80,19 @@ impl ProverSDK {
         }
         Ok(response)
     }
-    pub async fn register(&mut self, key:VerifyingKey)->Result<(),SdkErrors>{
+    pub async fn register(&mut self, key: VerifyingKey) -> Result<(), SdkErrors> {
         let signature = self.authority.0.sign(key.as_bytes());
-        let request = AddKeyRequest{
+        let request = AddKeyRequest {
             signature,
-            new_key:key,
-            authority:self.authority.0.verifying_key(),
+            new_key: key,
+            authority: self.authority.0.verifying_key(),
         };
-        let response = self.client.post(self.register.clone()).json(&request).send().await?;
+        let response = self
+            .client
+            .post(self.register.clone())
+            .json(&request)
+            .send()
+            .await?;
         if !response.status().is_success() {
             return Err(SdkErrors::RegisterResponseError(format!(
                 "Failed to register key with status code: {}",
@@ -95,6 +100,5 @@ impl ProverSDK {
             )));
         }
         Ok(())
-        }
-
+    }
 }

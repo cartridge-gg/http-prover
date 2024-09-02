@@ -60,7 +60,11 @@ pub async fn update_job_status(
     }
     drop(jobs);
 }
-pub async fn get_job(Path(id): Path<u64>, State(app_state): State<AppState>,_claims:Claims) -> impl IntoResponse {
+pub async fn get_job(
+    Path(id): Path<u64>,
+    State(app_state): State<AppState>,
+    _claims: Claims,
+) -> impl IntoResponse {
     let job_store = &app_state.job_store;
     let jobs = job_store.lock().await;
     if let Some(job) = jobs.iter().find(|job| job.id == id) {
