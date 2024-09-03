@@ -78,10 +78,8 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         "OK"
     }
 
-    let ok_router = Router::new().route("/", axum::routing::get(ok_handler));
-
     let app = Router::new()
-        .nest("/", ok_router)
+        .route("/", get(ok_handler))
         .route("/verify", post(root))
         .route("/get-job/:id", get(get_job))
         .route("/sse", get(sse_handler))
