@@ -28,4 +28,6 @@ pub enum SdkErrors {
     SigningKeyNotFound,
     #[error("Register response error: {0}")]
     RegisterResponseError(String),
+    #[error("SSE error: {0}")]
+    SSEError(String),
 }

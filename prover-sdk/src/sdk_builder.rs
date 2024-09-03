@@ -160,6 +160,7 @@ impl ProverSDKBuilder {
             verify: self.base_url.join("/verify")?,
             get_job: self.base_url.join("/get-job")?,
             register: self.base_url.join("/register")?,
+            sse: self.base_url.join("/sse")?,
             authority: signing_key,
         })
     }

@@ -4,19 +4,12 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use common::models::JobStatus;
 use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::{auth::jwt::Claims, server::AppState};
-
-#[derive(Serialize, Clone)]
-pub enum JobStatus {
-    Pending,
-    Running,
-    Completed,
-    Failed,
-}
 
 #[derive(Serialize, Clone)]
 pub struct Job {

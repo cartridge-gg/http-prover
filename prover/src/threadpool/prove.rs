@@ -2,15 +2,19 @@ use super::CairoVersionedInput;
 use crate::errors::ProverError;
 use crate::utils::{
     config::generate,
-    job::{update_job_status, JobStatus, JobStore},
+    job::{update_job_status, JobStore},
 };
+use common::models::JobStatus;
 use serde_json::Value;
 use starknet_types_core::felt::Felt;
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 use tempfile::TempDir;
 use tokio::process::Command;
+use tokio::sync::broadcast::Sender;
+use tokio::sync::Mutex;
 use tracing::trace;
 
 pub async fn prove(
@@ -18,6 +22,7 @@ pub async fn prove(
     job_store: JobStore,
     dir: TempDir,
     program_input: CairoVersionedInput,
+    sse_tx: Arc<Mutex<Sender<String>>>,
 ) -> Result<(), ProverError> {
     update_job_status(job_id, &job_store, JobStatus::Running, None).await;
     let path = dir.into_path();
@@ -89,10 +94,22 @@ pub async fn prove(
     let result = fs::read_to_string(&proof_path)?;
     let proof: Value = serde_json::from_str(&result)?;
     let final_result = serde_json::to_string_pretty(&proof)?;
+    let sender = sse_tx.lock().await;
+
     if status_proof.success() {
         update_job_status(job_id, &job_store, JobStatus::Completed, Some(final_result)).await;
+        if sender.receiver_count() > 0 {
+            sender
+                .send(serde_json::to_string(&(JobStatus::Completed, job_id))?)
+                .unwrap();
+        }
     } else {
         update_job_status(job_id, &job_store, JobStatus::Failed, Some(final_result)).await;
+        if sender.receiver_count() > 0 {
+            sender
+                .send(serde_json::to_string(&(JobStatus::Failed, job_id))?)
+                .unwrap();
+        }
     }
     Ok(())
 }

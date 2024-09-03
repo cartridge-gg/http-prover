@@ -24,9 +24,11 @@ pub async fn root(
             job_store,
             path,
             CairoVersionedInput::Cairo(program_input),
+            app_state.sse_tx.clone(),
         )
         .await
         .into_response();
+
     let body = json!({
         "job_id": job_id
     });

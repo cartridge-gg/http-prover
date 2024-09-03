@@ -3,6 +3,7 @@
 set -eux
 IMAGE_NAME="http-prover-test"
 # Check if the image already exists
+podman build -t $IMAGE_NAME .
 if podman images | grep -q "$IMAGE_NAME"; then
     echo "Image $IMAGE_NAME already exists. Skipping build step."
 else
