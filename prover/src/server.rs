@@ -74,7 +74,14 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         sse_tx: Arc::new(Mutex::new(sse_tx)),
     };
 
+    async fn ok_handler() -> &'static str {
+        "OK"
+    }
+
+    let ok_router = Router::new().route("/", axum::routing::get(ok_handler));
+
     let app = Router::new()
+        .nest("/", ok_router)
         .route("/verify", post(root))
         .route("/get-job/:id", get(get_job))
         .route("/sse", get(sse_handler))
