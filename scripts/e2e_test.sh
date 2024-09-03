@@ -10,11 +10,13 @@ else
     echo "Image $IMAGE_NAME does not exist. Building the image..."
 
     if [ "${CI:-}" == "true" ]; then
-      docker buildx build -t $IMAGE_NAME . \
-          --cache-from type=local,src=/tmp/.buildx-cache \
-          --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max
+        docker buildx build -t $IMAGE_NAME . \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --output=type=docker,dest=image.tar
+        docker load -i image.tar
     else
-      docker build -t $IMAGE_NAME .
+        docker build -t $IMAGE_NAME .
     fi
 
     if [ $? -ne 0 ]; then
