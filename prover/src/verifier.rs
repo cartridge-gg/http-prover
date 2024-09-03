@@ -1,5 +1,9 @@
 use crate::{
-    auth::jwt::Claims, errors::ProverError, extractors::workdir::TempDirHandle, server::AppState, utils::job::{create_job, update_job_status, JobStore}
+    auth::jwt::Claims,
+    errors::ProverError,
+    extractors::workdir::TempDirHandle,
+    server::AppState,
+    utils::job::{create_job, update_job_status, JobStore},
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use common::models::JobStatus;
@@ -54,8 +58,7 @@ pub async fn verify_proof(
     command.arg("--in_file").arg(&file);
 
     // Execute the command and capture the status
-    let status = command
-        .status()?;
+    let status = command.status()?;
     // Remove the proof file
     std::fs::remove_file(&file)?;
     // Check if the command was successful
@@ -70,7 +73,8 @@ pub async fn verify_proof(
     let sender = sender.lock().await;
     if sender.receiver_count() > 0 {
         sender
-            .send(serde_json::to_string(&(JobStatus::Completed, job_id))?).unwrap();
+            .send(serde_json::to_string(&(JobStatus::Completed, job_id))?)
+            .unwrap();
     }
     Ok(())
 }

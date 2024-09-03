@@ -3,10 +3,10 @@ pub mod errors;
 pub mod extractors;
 pub mod prove;
 pub mod server;
+pub mod sse;
 pub mod threadpool;
 pub mod utils;
 pub mod verifier;
-pub mod sse;
 use std::path::PathBuf;
 
 use clap::{arg, Parser};

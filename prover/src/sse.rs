@@ -22,7 +22,7 @@ pub async fn sse_handler(
     info!("SSE handler connected");
     let mut rx = state.sse_tx.lock().await.subscribe();
     let job_id = params.job_id;
-    
+
     let job_status = {
         let jobs = state.job_store.lock().await;
         jobs.iter()

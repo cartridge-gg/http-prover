@@ -1,10 +1,6 @@
-use std::time::Duration;
-
 use prover_sdk::sdk::ProverSDK;
 use serde::Deserialize;
 use serde_json::Value;
-use tokio::time::sleep;
-use tracing::info;
 
 use crate::errors::ProveErrors;
 
@@ -28,9 +24,9 @@ pub async fn fetch_job(sdk: ProverSDK, job: String) -> Result<String, ProveError
                 .unwrap_or("No result found")
                 .to_string());
         } else {
-            return Err(ProveErrors::Custom(json_response.to_string()));
+            Err(ProveErrors::Custom(json_response.to_string()))
         }
     } else {
-        return Err(ProveErrors::Custom(json_response.to_string()));
+        Err(ProveErrors::Custom(json_response.to_string()))
     }
 }

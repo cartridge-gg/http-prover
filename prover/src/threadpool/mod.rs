@@ -9,10 +9,29 @@ use tokio::{
 };
 use tracing::trace;
 pub mod prove;
-type ReceiverType = Arc<Mutex<mpsc::Receiver<(u64, JobStore, TempDir, CairoVersionedInput,Arc<Mutex<Sender<String>>>)>>>;
+type ReceiverType = Arc<
+    Mutex<
+        mpsc::Receiver<(
+            u64,
+            JobStore,
+            TempDir,
+            CairoVersionedInput,
+            Arc<Mutex<Sender<String>>>,
+        )>,
+    >,
+>;
+type SenderType = Option<
+    mpsc::Sender<(
+        u64,
+        JobStore,
+        TempDir,
+        CairoVersionedInput,
+        Arc<Mutex<Sender<String>>>,
+    )>,
+>;
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: Option<mpsc::Sender<(u64, JobStore, TempDir, CairoVersionedInput,Arc<Mutex<Sender<String>>>)>>,
+    sender: SenderType,
 }
 pub enum CairoVersionedInput {
     Cairo(CairoProverInput),
@@ -52,7 +71,7 @@ impl ThreadPool {
             .ok_or(ProverError::CustomError(
                 "Thread pool is shutdown".to_string(),
             ))?
-            .send((job_id, job_store, dir, program_input,sse_tx))
+            .send((job_id, job_store, dir, program_input, sse_tx))
             .await?;
         Ok(())
     }
@@ -87,10 +106,10 @@ impl Worker {
             loop {
                 let message = receiver.lock().await.recv().await;
                 match message {
-                    Some((job_id, job_store, dir, program_input,sse_tx)) => {
+                    Some((job_id, job_store, dir, program_input, sse_tx)) => {
                         trace!("Worker {id} got a job; executing.");
 
-                        if let Err(e) = prove(job_id, job_store, dir, program_input,sse_tx).await {
+                        if let Err(e) = prove(job_id, job_store, dir, program_input, sse_tx).await {
                             eprintln!("Worker {id} encountered an error: {:?}", e);
                         }
 

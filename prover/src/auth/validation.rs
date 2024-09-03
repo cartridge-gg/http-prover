@@ -164,7 +164,6 @@ mod tests {
             authorizer: Authorizer::Open,
             admin_key: generate_verifying_key(&generate_signing_key()),
             sse_tx: Arc::new(Mutex::new(tokio::sync::broadcast::channel(100).0)),
-
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
@@ -205,7 +204,6 @@ mod tests {
             authorizer: Authorizer::Open,
             admin_key: generate_verifying_key(&generate_signing_key()),
             sse_tx: Arc::new(Mutex::new(tokio::sync::broadcast::channel(100).0)),
-
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;
@@ -247,7 +245,6 @@ mod tests {
             authorizer: Authorizer::Open,
             admin_key: generate_verifying_key(&generate_signing_key()),
             sse_tx: Arc::new(Mutex::new(tokio::sync::broadcast::channel(100).0)),
-
         };
 
         let result = validate_signature(State(app_state), Json(payload)).await;

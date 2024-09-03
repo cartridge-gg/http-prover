@@ -118,7 +118,7 @@ impl ProverSDK {
                 response.status(),
             )));
         }
-        
+
         let mut stream = response.bytes_stream();
         while let Some(_item) = stream.next().await {}
         Ok(())
