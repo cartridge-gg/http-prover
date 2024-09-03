@@ -4,15 +4,15 @@ use std::sync::Arc;
 use tempfile::TempDir;
 use tokio::{
     spawn,
-    sync::{mpsc, Mutex},
+    sync::{broadcast::Sender, mpsc, Mutex},
     task::JoinHandle,
 };
 use tracing::trace;
 pub mod prove;
-type ReceiverType = Arc<Mutex<mpsc::Receiver<(u64, JobStore, TempDir, CairoVersionedInput)>>>;
+type ReceiverType = Arc<Mutex<mpsc::Receiver<(u64, JobStore, TempDir, CairoVersionedInput,Arc<Mutex<Sender<String>>>)>>>;
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: Option<mpsc::Sender<(u64, JobStore, TempDir, CairoVersionedInput)>>,
+    sender: Option<mpsc::Sender<(u64, JobStore, TempDir, CairoVersionedInput,Arc<Mutex<Sender<String>>>)>>,
 }
 pub enum CairoVersionedInput {
     Cairo(CairoProverInput),
@@ -45,13 +45,14 @@ impl ThreadPool {
         job_store: JobStore,
         dir: TempDir,
         program_input: CairoVersionedInput,
+        sse_tx: Arc<Mutex<Sender<String>>>,
     ) -> Result<(), ProverError> {
         self.sender
             .as_ref()
             .ok_or(ProverError::CustomError(
                 "Thread pool is shutdown".to_string(),
             ))?
-            .send((job_id, job_store, dir, program_input))
+            .send((job_id, job_store, dir, program_input,sse_tx))
             .await?;
         Ok(())
     }
@@ -86,10 +87,10 @@ impl Worker {
             loop {
                 let message = receiver.lock().await.recv().await;
                 match message {
-                    Some((job_id, job_store, dir, program_input)) => {
+                    Some((job_id, job_store, dir, program_input,sse_tx)) => {
                         trace!("Worker {id} got a job; executing.");
 
-                        if let Err(e) = prove(job_id, job_store, dir, program_input).await {
+                        if let Err(e) = prove(job_id, job_store, dir, program_input,sse_tx).await {
                             eprintln!("Worker {id} encountered an error: {:?}", e);
                         }
 

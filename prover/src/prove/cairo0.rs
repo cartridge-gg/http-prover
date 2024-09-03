@@ -24,6 +24,7 @@ pub async fn root(
             job_store,
             path,
             CairoVersionedInput::Cairo0(program_input),
+            app_state.sse_tx.clone(),
         )
         .await
         .into_response();

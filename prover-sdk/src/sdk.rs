@@ -1,9 +1,9 @@
+use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk_builder::ProverSDKBuilder};
 use common::{requests::AddKeyRequest, ProverInput};
 use ed25519_dalek::{ed25519::signature::SignerMut, VerifyingKey};
+use futures::StreamExt;
 use reqwest::{Client, Response};
 use url::Url;
-
-use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk_builder::ProverSDKBuilder};
 #[derive(Debug, Clone)]
 /// ProverSDK is a struct representing a client for interacting with the Prover service.
 pub struct ProverSDK {
@@ -13,11 +13,19 @@ pub struct ProverSDK {
     pub verify: Url,
     pub get_job: Url,
     pub register: Url,
+    pub sse: Url,
     pub authority: ProverAccessKey,
 }
 
 impl ProverSDK {
     pub async fn new(url: Url, access_key: ProverAccessKey) -> Result<Self, SdkErrors> {
+        let url = if !url.as_str().ends_with('/') {
+            let mut url_with_slash = url.clone();
+            url_with_slash.set_path(&format!("{}/", url.path()));
+            url_with_slash
+        } else {
+            url
+        };
         let auth_url = url.join("auth")?;
         ProverSDKBuilder::new(auth_url, url)
             .auth(access_key)
@@ -99,6 +107,20 @@ impl ProverSDK {
                 response.status(),
             )));
         }
+        Ok(())
+    }
+    pub async fn sse(&self, job_id: u64) -> Result<(), SdkErrors> {
+        let url = format!("{}?job_id={}", self.sse.clone().as_str(), job_id);
+        let response = self.client.get(url).send().await?;
+        if !response.status().is_success() {
+            return Err(SdkErrors::SSEError(format!(
+                "Failed to get SSE with status code: {}",
+                response.status(),
+            )));
+        }
+        
+        let mut stream = response.bytes_stream();
+        while let Some(_item) = stream.next().await {}
         Ok(())
     }
 }

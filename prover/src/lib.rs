@@ -6,6 +6,7 @@ pub mod server;
 pub mod threadpool;
 pub mod utils;
 pub mod verifier;
+pub mod sse;
 use std::path::PathBuf;
 
 use clap::{arg, Parser};
