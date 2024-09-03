@@ -3,12 +3,20 @@
 set -eux
 IMAGE_NAME="http-prover-test"
 # Check if the image already exists
-docker build -t $IMAGE_NAME .
+
 if docker images | grep -q "$IMAGE_NAME"; then
     echo "Image $IMAGE_NAME already exists. Skipping build step."
 else
     echo "Image $IMAGE_NAME does not exist. Building the image..."
-    docker build -t $IMAGE_NAME .
+
+    if [ "${CI:-}" == "true" ]; then
+      docker buildx build -t $IMAGE_NAME . \
+          --cache-from type=local,src=/tmp/.buildx-cache \
+          --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max
+    else
+      docker build -t $IMAGE_NAME .
+    fi
+
     if [ $? -ne 0 ]; then
         echo "Failed to build the image. Exiting."
         exit 1
