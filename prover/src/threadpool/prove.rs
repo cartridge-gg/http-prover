@@ -141,7 +141,7 @@ pub async fn cairo0_run(
         .arg(&program_input_path)
         .arg("--program")
         .arg(&program_path)
-        .stdout(std::process::Stdio::piped()) 
+        .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
     let child = command.spawn()?;
@@ -179,7 +179,7 @@ pub async fn cairo_run(
         .arg("--args_file")
         .arg(&program_input_path)
         .arg(&program_path)
-        .stdout(std::process::Stdio::piped()) 
+        .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
     let child = command.spawn()?;
