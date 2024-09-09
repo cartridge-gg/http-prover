@@ -44,15 +44,14 @@ impl Template {
             .write_all(json_string.as_bytes())
             .map_err(ProverError::from)
     }
-    fn generate_from_public_input(public_input: ProgramPublicInputAsNSteps) -> Result<Self, ProverError> {
-        let template = Self::default();
-        let fri_step_list = public_input
-            .calculate_fri_step_list(template.stark.fri.last_layer_degree_bound);
-        Ok(template.to_updated_fri_step_list(fri_step_list))
-    }
-    fn to_updated_fri_step_list(mut self, new_fri_step_list: Vec<u32>) -> Self {
-        self.stark.fri.fri_step_list = new_fri_step_list;
-        self
+    fn generate_from_public_input(
+        public_input: ProgramPublicInputAsNSteps,
+    ) -> Result<Self, ProverError> {
+        let mut template = Self::default();
+        let fri_step_list =
+            public_input.calculate_fri_step_list(template.stark.fri.last_layer_degree_bound);
+        template.stark.fri.fri_step_list = fri_step_list;
+        Ok(template)
     }
 }
 

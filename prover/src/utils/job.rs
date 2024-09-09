@@ -15,7 +15,7 @@ use crate::{auth::jwt::Claims, server::AppState};
 pub struct Job {
     pub id: u64,
     pub status: JobStatus,
-    pub result: Option<String>, // You can change this to any type based on your use case
+    pub result: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -25,42 +25,44 @@ pub enum JobResponse {
     Completed { result: String, status: JobStatus },
     Failed { error: String },
 }
-pub type JobStore = Arc<Mutex<Vec<Job>>>;
 
-pub async fn create_job(job_store: &JobStore) -> u64 {
-    let mut jobs = job_store.lock().await;
-    let job_id = jobs.len() as u64;
-    let new_job = Job {
-        id: job_id,
-        status: JobStatus::Pending,
-        result: None,
-    };
-    jobs.push(new_job);
-    drop(jobs);
-    job_id
+#[derive(Clone, Default)]
+pub struct JobStore {
+    jobs: Arc<Mutex<Vec<Job>>>,
 }
 
-pub async fn update_job_status(
-    job_id: u64,
-    job_store: &JobStore,
-    status: JobStatus,
-    result: Option<String>,
-) {
-    let mut jobs = job_store.lock().await;
-    if let Some(job) = jobs.iter_mut().find(|job| job.id == job_id) {
-        job.status = status;
-        job.result = result;
+impl JobStore {
+    pub async fn create_job(&self) -> u64 {
+        let mut jobs = self.jobs.lock().await;
+        let job_id = jobs.len() as u64;
+        let new_job = Job {
+            id: job_id,
+            status: JobStatus::Pending,
+            result: None,
+        };
+        jobs.push(new_job);
+        drop(jobs);
+        job_id
     }
-    drop(jobs);
+    pub async fn update_job_status(&self, job_id: u64, status: JobStatus, result: Option<String>) {
+        let mut jobs = self.jobs.lock().await;
+        if let Some(job) = jobs.iter_mut().find(|job| job.id == job_id) {
+            job.status = status;
+            job.result = result;
+        }
+    }
+    pub async fn get_job(&self, id: u64) -> Option<Job> {
+        let jobs = self.jobs.lock().await;
+        jobs.iter().find(|job| job.id == id).cloned()
+    }
 }
+
 pub async fn get_job(
     Path(id): Path<u64>,
     State(app_state): State<AppState>,
     _claims: Claims,
 ) -> impl IntoResponse {
-    let job_store = &app_state.job_store;
-    let jobs = job_store.lock().await;
-    if let Some(job) = jobs.iter().find(|job| job.id == id) {
+    if let Some(job) = app_state.job_store.get_job(id).await {
         let (status, response) = match job.status {
             JobStatus::Pending | JobStatus::Running => (
                 StatusCode::OK,
