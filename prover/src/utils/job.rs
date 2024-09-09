@@ -38,8 +38,7 @@ pub struct JobStore {
 
 impl JobStore {
     pub async fn create_job(&self) -> u64 {
-        let id = self.inner.lock().await.create_job();
-        id
+        self.inner.lock().await.create_job()
     }
     pub async fn update_job_status(&self, job_id: u64, status: JobStatus, result: Option<String>) {
         self.inner
@@ -87,15 +86,10 @@ impl JobStoreInner {
     // Clear old jobs so that the memory doesn't go balistic if the server runs for a long time
     fn clear_old_jobs(&mut self) {
         let expiry_duration = Duration::from_secs(5 * 60 * 60); // 5 hours
-        loop {
-            match self.jobs.pop_first() {
-                Some((id, job)) => {
-                    if job.created.elapsed() < expiry_duration {
-                        self.jobs.insert(id, job);
-                        break;
-                    }
-                }
-                None => break,
+        while let Some((id, job)) = self.jobs.pop_first() {
+            if job.created.elapsed() < expiry_duration {
+                self.jobs.insert(id, job);
+                break;
             }
         }
     }
