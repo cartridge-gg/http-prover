@@ -7,8 +7,6 @@ use tracing::info;
 
 use crate::errors::ProveErrors;
 
-
-
 pub async fn fetch_job_sse(sdk: ProverSDK, job: u64) -> Result<String, ProveErrors> {
     info!("Job ID: {}", job);
     sdk.sse(job).await?;
