@@ -56,7 +56,7 @@ impl ProverSDK {
         let response = self
             .client
             .post(url.clone())
-            .json(&serde_json::to_string(&data)?)
+            .json(&data.to_json_value())
             .send()
             .await?;
 
