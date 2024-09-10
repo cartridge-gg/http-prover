@@ -87,7 +87,7 @@ struct ProgramPublicInputAsNSteps {
 
 impl ProgramPublicInputAsNSteps {
     pub fn read_from_file(input_file: &PathBuf) -> Result<Self, ProverError> {
-        serde_json::from_reader(BufReader::new(File::open(&input_file)?)).map_err(ProverError::from)
+        serde_json::from_reader(BufReader::new(File::open(input_file)?)).map_err(ProverError::from)
     }
     fn calculate_fri_step_list(&self, degree_bound: u32) -> Vec<u32> {
         let fri_degree = ((self.n_steps as f64 / degree_bound as f64).log(2.0).round() as u32) + 4;
