@@ -1,9 +1,6 @@
 use super::CairoVersionedInput;
 use crate::errors::ProverError;
-use crate::utils::{
-    config::Template,
-    job::{update_job_status, JobStore},
-};
+use crate::utils::{config::Template, job::JobStore};
 use common::models::JobStatus;
 use serde_json::Value;
 use starknet_types_core::felt::Felt;
@@ -24,7 +21,9 @@ pub async fn prove(
     program_input: CairoVersionedInput,
     sse_tx: Arc<Mutex<Sender<String>>>,
 ) -> Result<(), ProverError> {
-    update_job_status(job_id, &job_store, JobStatus::Running, None).await;
+    job_store
+        .update_job_status(job_id, JobStatus::Running, None)
+        .await;
     let path = dir.into_path();
     let program_input_path: PathBuf = path.join("program_input.json");
     let program_path: PathBuf = path.join("program.json");
@@ -97,14 +96,18 @@ pub async fn prove(
     let sender = sse_tx.lock().await;
 
     if status_proof.success() {
-        update_job_status(job_id, &job_store, JobStatus::Completed, Some(final_result)).await;
+        job_store
+            .update_job_status(job_id, JobStatus::Completed, Some(final_result))
+            .await;
         if sender.receiver_count() > 0 {
             sender
                 .send(serde_json::to_string(&(JobStatus::Completed, job_id))?)
                 .unwrap();
         }
     } else {
-        update_job_status(job_id, &job_store, JobStatus::Failed, Some(final_result)).await;
+        job_store
+            .update_job_status(job_id, JobStatus::Failed, Some(final_result))
+            .await;
         if sender.receiver_count() > 0 {
             sender
                 .send(serde_json::to_string(&(JobStatus::Failed, job_id))?)
