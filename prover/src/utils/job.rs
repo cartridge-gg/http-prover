@@ -4,8 +4,8 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use common::models::JobStatus;
-use serde::Serialize;
+use common::models::{JobStatus, ProverResult};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     sync::Arc,
@@ -23,11 +23,11 @@ pub struct Job {
     pub created: Instant,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize,Deserialize)]
 #[serde(untagged)]
 pub enum JobResponse {
     InProgress { id: u64, status: JobStatus },
-    Completed { result: String, status: JobStatus },
+    Completed { result: ProverResult, status: JobStatus },
     Failed { error: String },
 }
 
@@ -113,10 +113,10 @@ pub async fn get_job(
                 StatusCode::OK,
                 Json(JobResponse::Completed {
                     status: job.status.clone(),
-                    result: job
+                    result: serde_json::from_str(&job
                         .result
                         .clone()
-                        .unwrap_or_else(|| "No result available".to_string()),
+                        .unwrap()).unwrap(),
                 }),
             ),
             JobStatus::Failed => (

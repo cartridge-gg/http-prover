@@ -7,7 +7,7 @@ use crate::sse::sse_handler;
 use crate::threadpool::ThreadPool;
 use crate::utils::job::{get_job, JobStore};
 use crate::utils::shutdown::shutdown_signal;
-use crate::verifier::root;
+use crate::verifier::verify_proof;
 use crate::{prove, Args};
 use axum::{
     middleware,
@@ -80,7 +80,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
 
     let app = Router::new()
         .route("/", get(ok_handler))
-        .route("/verify", post(root))
+        .route("/verify", post(verify_proof))
         .route("/get-job/:id", get(get_job))
         .route("/sse", get(sse_handler))
         .with_state(app_state.clone())
