@@ -23,12 +23,20 @@ pub struct Job {
     pub created: Instant,
 }
 
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum JobResponse {
-    InProgress { id: u64, status: JobStatus },
-    Completed { result: ProverResult, status: JobStatus },
-    Failed { error: String },
+    InProgress {
+        id: u64,
+        status: JobStatus,
+    },
+    Completed {
+        result: ProverResult,
+        status: JobStatus,
+    },
+    Failed {
+        error: String,
+    },
 }
 
 #[derive(Default, Clone)]
@@ -113,10 +121,7 @@ pub async fn get_job(
                 StatusCode::OK,
                 Json(JobResponse::Completed {
                     status: job.status.clone(),
-                    result: serde_json::from_str(&job
-                        .result
-                        .clone()
-                        .unwrap()).unwrap(),
+                    result: serde_json::from_str(&job.result.clone().unwrap()).unwrap(),
                 }),
             ),
             JobStatus::Failed => (

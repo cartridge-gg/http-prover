@@ -11,7 +11,7 @@ pub struct JWTResponse {
     pub expiration: u64,
     pub session_key: Option<VerifyingKey>,
 }
-#[derive(Serialize, Deserialize, Clone,Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum JobStatus {
     Pending,
     Running,
@@ -20,17 +20,25 @@ pub enum JobStatus {
     Unknown,
 }
 
-#[derive(Clone,Serialize,Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ProverResult {
     pub proof: String,
     pub program_hash: Felt,
     pub program_output: Vec<Felt>,
     pub program_output_hash: Felt,
 }
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum JobResponse {
-    InProgress { id: u64, status: JobStatus },
-    Completed { result: ProverResult, status: JobStatus },
-    Failed { error: String },
+    InProgress {
+        id: u64,
+        status: JobStatus,
+    },
+    Completed {
+        result: ProverResult,
+        status: JobStatus,
+    },
+    Failed {
+        error: String,
+    },
 }

@@ -1,7 +1,9 @@
 use super::run::RunPaths;
 use super::CairoVersionedInput;
 use crate::errors::ProverError;
-use crate::utils::proof_parser::{extract_program_hash, extract_program_output, program_output_hash};
+use crate::utils::proof_parser::{
+    extract_program_hash, extract_program_output, program_output_hash,
+};
 use crate::utils::{config::Template, job::JobStore};
 use common::models::{JobStatus, ProverResult};
 use serde_json::Value;
@@ -48,7 +50,7 @@ pub async fn prove(
         let program_hash = extract_program_hash(stark_proof.clone());
         let program_output = extract_program_output(stark_proof.clone());
         let program_output_hash = program_output_hash(program_output.clone());
-        let prover_result = ProverResult{
+        let prover_result = ProverResult {
             proof: final_result,
             program_hash,
             program_output,
@@ -56,7 +58,11 @@ pub async fn prove(
         };
 
         job_store
-            .update_job_status(job_id, JobStatus::Completed,serde_json::to_string_pretty(&prover_result).ok())
+            .update_job_status(
+                job_id,
+                JobStatus::Completed,
+                serde_json::to_string_pretty(&prover_result).ok(),
+            )
             .await;
         if sender.receiver_count() > 0 {
             sender

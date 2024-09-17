@@ -7,9 +7,9 @@ pub async fn fetch_job(sdk: ProverSDK, job: u64) -> Option<ProverResult> {
     let response = sdk.get_job(job).await.unwrap();
     let response = response.text().await.unwrap();
     let json_response: JobResponse = serde_json::from_str(&response).unwrap();
-      
+
     if let JobResponse::Completed { result, .. } = json_response {
         return Some(result);
     }
-    None   
+    None
 }

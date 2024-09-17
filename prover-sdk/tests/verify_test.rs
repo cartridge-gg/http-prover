@@ -14,8 +14,8 @@ async fn test_verify_invalid_proof() {
     let url = Url::parse(&url).unwrap();
     let sdk = ProverSDK::new(url, access_key).await.unwrap();
     let result = sdk.clone().verify("wrong proof".to_string()).await;
-    assert!(result.is_ok(),"Failed to verify proof");
-    assert_eq!("false", result.unwrap()); 
+    assert!(result.is_ok(), "Failed to verify proof");
+    assert_eq!("false", result.unwrap());
 }
 
 #[tokio::test]
@@ -46,6 +46,6 @@ async fn test_verify_valid_proof() {
     assert!(result.is_some());
     let result = result.unwrap();
     let result = sdk.clone().verify(result.proof).await;
-    assert!(result.is_ok(),"Failed to verify proof");
+    assert!(result.is_ok(), "Failed to verify proof");
     assert_eq!("true", result.unwrap());
 }
