@@ -45,8 +45,8 @@ pub async fn prove(
     let sender = sse_tx.lock().await;
 
     if prove_status.success() {
-        let proof_json = serde_json::from_str::<json_parser::StarkProof>(&final_result).unwrap();
-        let stark_proof = stark_proof::StarkProof::try_from(proof_json).unwrap();
+        let proof_json = serde_json::from_str::<json_parser::StarkProof>(&final_result)?;
+        let stark_proof = stark_proof::StarkProof::try_from(proof_json)?;
         let program_hash = extract_program_hash(stark_proof.clone());
         let program_output = extract_program_output(stark_proof.clone());
         let program_output_hash = program_output_hash(program_output.clone());
