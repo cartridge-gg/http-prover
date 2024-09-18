@@ -45,18 +45,7 @@ pub async fn prove(
     let sender = sse_tx.lock().await;
 
     if prove_status.success() {
-        let proof_json = serde_json::from_str::<json_parser::StarkProof>(&final_result)?;
-        let stark_proof = stark_proof::StarkProof::try_from(proof_json)?;
-        let program_hash = extract_program_hash(stark_proof.clone());
-        let program_output = extract_program_output(stark_proof.clone());
-        let program_output_hash = program_output_hash(program_output.clone());
-        let prover_result = ProverResult {
-            proof: final_result,
-            program_hash,
-            program_output,
-            program_output_hash,
-        };
-
+        let prover_result = prover_result(final_result)?;
         job_store
             .update_job_status(
                 job_id,
@@ -80,6 +69,21 @@ pub async fn prove(
         }
     }
     Ok(())
+}
+
+fn prover_result(final_result: String) -> Result<ProverResult, ProverError> {
+    let proof_json = serde_json::from_str::<json_parser::StarkProof>(&final_result)?;
+    let stark_proof = stark_proof::StarkProof::try_from(proof_json)?;
+    let program_hash = extract_program_hash(stark_proof.clone());
+    let program_output = extract_program_output(stark_proof.clone());
+    let program_output_hash = program_output_hash(program_output.clone());
+    let prover_result = ProverResult {
+        proof: final_result.clone(),
+        program_hash,
+        program_output,
+        program_output_hash,
+    };
+    Ok(prover_result)
 }
 
 #[derive(Debug, Clone)]
