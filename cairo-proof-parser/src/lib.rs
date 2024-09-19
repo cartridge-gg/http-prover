@@ -96,8 +96,7 @@ mod tests {
     };
 
     pub fn read_proof() -> String {
-        let proof = std::fs::read_to_string("example/proof.json").unwrap();
-        proof
+        std::fs::read_to_string("example/proof.json").unwrap()
     }
     #[test]
     fn test_extract_program_hash() {
