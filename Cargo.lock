@@ -303,6 +303,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8318a53db07bb3f8dca91a600466bdb3f2eaadeedfdbcf02e1accbad9271ba50"
 
 [[package]]
+name = "cairo-proof-parser"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "num-bigint",
+ "serde",
+ "serde_json",
+ "starknet-crypto",
+ "starknet-types-core",
+ "swiftness_proof_parser",
+ "thiserror",
+]
+
+[[package]]
 name = "cairo-prove"
 version = "0.1.0"
 dependencies = [
@@ -630,6 +645,12 @@ dependencies = [
  "subtle",
  "zeroize",
 ]
+
+[[package]]
+name = "either"
+version = "1.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
 
 [[package]]
 name = "encoding_rs"
@@ -1078,6 +1099,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1434,6 +1464,7 @@ dependencies = [
  "axum-extra",
  "base64 0.22.1",
  "bytes",
+ "cairo-proof-parser",
  "chrono",
  "clap",
  "common",

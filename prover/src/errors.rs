@@ -1,16 +1,15 @@
-use anyhow::Error as AnyhowError;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
+use cairo_proof_parser::ProofParserError;
 use serde_json::json;
 use std::{convert::Infallible, net::AddrParseError};
 use thiserror::Error;
 use tokio::sync::mpsc::error::SendError;
 
 use crate::auth::auth_errors::{AuthError, AuthorizerError};
-
 #[derive(Debug, Error)]
 pub enum ProverError {
     #[error(transparent)]
@@ -36,7 +35,8 @@ pub enum ProverError {
     #[error("Failed to send message via SSE{0}")]
     SseError(String),
     #[error(transparent)]
-    ParserError(#[from] AnyhowError),
+    ProofParserError(#[from] ProofParserError),
+
 }
 impl<T> From<SendError<T>> for ProverError {
     fn from(err: SendError<T>) -> ProverError {
@@ -84,7 +84,7 @@ impl IntoResponse for ProverError {
             ProverError::AddressParse(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             ProverError::KeyError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             ProverError::SseError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
-            ProverError::ParserError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            ProverError::ProofParserError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
         };
 
         let body = Json(json!({ "error": error_message }));

@@ -30,3 +30,4 @@ async-stream.workspace = true
 swiftness_proof_parser.workspace = true
 starknet-crypto.workspace = true
 anyhow.workspace = true
+cairo-proof-parser.workspace = true

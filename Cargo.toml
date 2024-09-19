@@ -7,6 +7,7 @@ members = [
     "bin/cairo-prove",
     "bin/keygen",
     "bin/register",
+    "cairo-proof-parser",
 ]
 [workspace.package]
 version = "0.1.0"
@@ -23,6 +24,7 @@ tempfile = "3.12.0"
 serde = { version = "1.0.209", features = ["derive"] }
 common = { path = "common" }
 prover-sdk = { path = "prover-sdk" }
+cairo-proof-parser = { path = "cairo-proof-parser" }
 reqwest = { version = "0.12.7", features = [
     "blocking",
     "json",

@@ -1,0 +1,15 @@
+[package]
+name = "cairo-proof-parser"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+starknet-crypto.workspace = true
+starknet-types-core.workspace = true
+swiftness_proof_parser.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+itertools = "0.13.0"
+num-bigint = "0.4.6"
+anyhow.workspace = true
