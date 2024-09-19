@@ -36,7 +36,6 @@ pub enum ProverError {
     SseError(String),
     #[error(transparent)]
     ProofParserError(#[from] ProofParserError),
-
 }
 impl<T> From<SendError<T>> for ProverError {
     fn from(err: SendError<T>) -> ProverError {

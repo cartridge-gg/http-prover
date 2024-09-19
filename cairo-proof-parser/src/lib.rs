@@ -90,7 +90,11 @@ pub fn proof_to_felt(proof: StarkProof) -> Result<Vec<Felt>, ProofParserError> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{
+        extract_program_hash, extract_program_output, parse_proof, program_output_hash,
+        proof_to_felt,
+    };
+
     pub fn read_proof() -> String {
         let proof = std::fs::read_to_string("example/proof.json").unwrap();
         proof

@@ -3,7 +3,9 @@ use super::CairoVersionedInput;
 use crate::errors::ProverError;
 
 use crate::utils::{config::Template, job::JobStore};
-use cairo_proof_parser::{extract_program_hash, extract_program_output, parse_proof, program_output_hash};
+use cairo_proof_parser::{
+    extract_program_hash, extract_program_output, parse_proof, program_output_hash,
+};
 use common::models::{JobStatus, ProverResult};
 use serde_json::Value;
 use std::fs;
