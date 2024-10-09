@@ -26,7 +26,6 @@ prover-sdk = { path = "prover-sdk" }
 reqwest = { version = "0.12.7", features = [
     "blocking",
     "json",
-    "rustls-tls",
     "stream",
 ], default-features = false }
 reqwest_cookie_store = "0.7.0"
