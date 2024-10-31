@@ -23,11 +23,12 @@ tempfile = "3.12.0"
 serde = { version = "1.0.209", features = ["derive"] }
 common = { path = "common" }
 prover-sdk = { path = "prover-sdk" }
-reqwest = { version = "0.12.7", features = [
+reqwest = { version = "0.11.27", features = [
     "blocking",
     "json",
     "rustls-tls",
     "stream",
+    "cookies",
 ], default-features = false }
 reqwest_cookie_store = "0.7.0"
 url = "2.5.2"
