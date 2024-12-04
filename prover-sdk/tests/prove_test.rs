@@ -39,17 +39,13 @@ async fn test_cairo_prove() {
     assert_eq!(result.serialized_proof.len(), 2451);
     assert_eq!(
         result.program_hash,
-        Felt::from_hex(
-            "0x4fa9237f64ebf68987209abe5058c32961131e3e5f16383d832dba7a6a5c937"
-        )
-        .unwrap()
+        Felt::from_hex("0x4fa9237f64ebf68987209abe5058c32961131e3e5f16383d832dba7a6a5c937")
+            .unwrap()
     );
     assert_eq!(
         result.program_output_hash,
-        Felt::from_hex(
-            "0x4dd3006138ea865d5610d65e02fd227b7436acc95e4b2ec30f5a21356ea6205"
-        )
-        .unwrap()
+        Felt::from_hex("0x4dd3006138ea865d5610d65e02fd227b7436acc95e4b2ec30f5a21356ea6205")
+            .unwrap()
     );
     let result = sdk.clone().verify(result.proof).await;
     assert!(result.is_ok(), "Failed to verify proof");
@@ -84,18 +80,14 @@ async fn test_cairo0_prove() {
     assert_eq!(result.serialized_proof.len(), 2327);
     assert_eq!(
         result.program_hash,
-        Felt::from_hex(
-            "0x7ac5582e353f8750487838481a46b5429ef84b2f18f909aaab9388f1fe0a28b"
-        )
-        .unwrap()
+        Felt::from_hex("0x7ac5582e353f8750487838481a46b5429ef84b2f18f909aaab9388f1fe0a28b")
+            .unwrap()
     );
     assert_eq!(result.program_output.len(), 2);
     assert_eq!(
         result.program_output_hash,
-        Felt::from_hex(
-            "0x60cbf4532b874a9a19557a55b45663831f71e21438525174b82842a1fab0ec4"
-        )
-        .unwrap()
+        Felt::from_hex("0x60cbf4532b874a9a19557a55b45663831f71e21438525174b82842a1fab0ec4")
+            .unwrap()
     );
 
     let result = sdk.clone().verify(result.proof).await.unwrap();
