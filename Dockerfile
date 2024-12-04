@@ -18,7 +18,7 @@ WORKDIR /app
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer!
 RUN cargo chef cook --release --recipe-path recipe.json
-RUN cargo install --git https://github.com/lambdaclass/cairo-vm cairo1-run
+RUN cargo install --git https://github.com/lambdaclass/cairo-vm --rev d2c056e4a89aec9901c176f056dbcc58dd4660e5 cairo1-run
 RUN cargo build --release -p prover
 
 # Build application
@@ -27,7 +27,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN cargo build --release -p prover
 
-FROM ghcr.io/cartridge-gg/stone-prover:main AS prover
+FROM docker.io/chudas/prover:v6 AS prover
 
 FROM python:3.9.18-slim-bookworm AS final
 
