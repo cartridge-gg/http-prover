@@ -9,6 +9,7 @@ use crate::utils::job::{get_job, JobStore};
 use crate::utils::shutdown::shutdown_signal;
 use crate::verifier::verify_proof;
 use crate::{prove, Args};
+use axum::extract::DefaultBodyLimit;
 use axum::{
     middleware,
     routing::{get, post},
@@ -89,6 +90,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         .with_state(app_state.clone())
         .nest("/", auth(app_state.clone()))
         .nest("/prove", prove::router(app_state.clone()))
+        .layer(DefaultBodyLimit::max(1024 * 1024 * 1000))
         .layer(middleware::from_extractor::<TempDirHandle>());
 
     let address: SocketAddr = format!("{}:{}", args.host, args.port)

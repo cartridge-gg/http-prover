@@ -28,7 +28,7 @@
 # Ignores
 **/.gitignore
 **/.dockerignore
-
+**/k8s
 # Envs
 **/*.cargo
 

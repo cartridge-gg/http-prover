@@ -1,5 +1,5 @@
 FROM rust:1-alpine AS chef
-RUN rustup install 1.79.0
+RUN rustup install 1.81.0
 RUN rustup component add cargo clippy rust-docs rust-std rustc rustfmt
 
 # Use apk for package management in Alpine
@@ -18,7 +18,7 @@ WORKDIR /app
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer!
 RUN cargo chef cook --release --recipe-path recipe.json
-RUN cargo install --git https://github.com/lambdaclass/cairo-vm --rev ed3117098dd33c96056880af6fa67f9b2caebfb4 cairo1-run
+RUN cargo install --git https://github.com/lambdaclass/cairo-vm --rev d2c056e4a89aec9901c176f056dbcc58dd4660e5 cairo1-run
 RUN cargo build --release -p prover
 
 # Build application
@@ -27,7 +27,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN cargo build --release -p prover
 
-FROM ghcr.io/cartridge-gg/stone-prover:main AS prover
+FROM docker.io/chudas/prover:v6 AS prover
 
 FROM python:3.9.18-slim-bookworm AS final
 
@@ -40,7 +40,7 @@ RUN git clone --depth=1 -b v2.7.0-rc.3 https://github.com/starkware-libs/cairo.g
 RUN mv cairo/corelib/ .
 RUN rm -rf cairo
 
-RUN pip install cairo-lang==0.13.1
+RUN pip install cairo-lang==0.13.2
 RUN pip install sympy==1.12.1
 
 COPY --from=builder /app/target/release/prover /usr/local/bin/prover
