@@ -77,7 +77,7 @@ impl core::default::Default for Template {
             field: "PrimeField0".to_string(),
             channel_hash: "poseidon3".to_string(),
             commitment_hash: "keccak256_masked160_lsb".to_string(),
-            n_verifier_friendly_commitment_layers: 1000,
+            n_verifier_friendly_commitment_layers: 9999,
             pow_hash: "keccak256".to_string(),
             statement: serde_json::json!({ "page_hash": "pedersen" }),
             stark: Stark {
