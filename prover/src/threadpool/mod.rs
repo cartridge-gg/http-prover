@@ -125,7 +125,16 @@ impl Worker {
             loop {
                 let message = receiver.lock().await.recv().await;
                 match message {
-                    Some((job_id, job_store, dir, program_input, sse_tx, n_queries, pow_bits,bootload)) => {
+                    Some((
+                        job_id,
+                        job_store,
+                        dir,
+                        program_input,
+                        sse_tx,
+                        n_queries,
+                        pow_bits,
+                        bootload,
+                    )) => {
                         trace!("Worker {id} got a job; executing.");
 
                         if let Err(e) = prove(

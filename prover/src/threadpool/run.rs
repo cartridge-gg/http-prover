@@ -47,11 +47,12 @@ impl CairoVersionedInput {
                 if bootloader {
                     let command = paths.cairo1_pie_command(&input.layout);
                     command_run(command).await?;
-                    let bootloader_compile_command = paths.bootloader_compile_command(&input.layout);
+                    let bootloader_compile_command =
+                        paths.bootloader_compile_command(&input.layout);
                     command_run(bootloader_compile_command).await?;
                     let pie_file_str = paths.pie_output.to_str().unwrap();
                     let program_input_file_str = paths.program_input_path.to_str().unwrap();
-                    create_template(pie_file_str,program_input_file_str)?;
+                    create_template(pie_file_str, program_input_file_str)?;
                     let command = paths.cairo0_run_command(&input.layout);
                     command_run(command).await
                 } else {

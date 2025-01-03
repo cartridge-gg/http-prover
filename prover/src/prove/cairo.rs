@@ -25,7 +25,7 @@ pub async fn root(
         sse_tx: app_state.sse_tx.clone(),
         n_queries: program_input.clone().n_queries,
         pow_bits: program_input.pow_bits,
-        bootload:program_input.bootload,
+        bootload: program_input.bootload,
     };
     let _ = thread.execute(execution_params).await.into_response();
 

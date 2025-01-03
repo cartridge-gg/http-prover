@@ -38,7 +38,7 @@ async fn test_cairo_prove_bootloader() {
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
-    fs::write("../cairo1_boot_rec_proof.json",result.proof.clone()).unwrap();
+    fs::write("../cairo1_boot_rec_proof.json", result.proof.clone()).unwrap();
     // //Values calculated using https://github.com/HerodotusDev/integrity
     assert_eq!(result.serialized_proof.len(), 3117);
     assert_eq!(
@@ -119,13 +119,13 @@ async fn test_cairo0_prove_bootloader() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
-        bootload: true
+        bootload: true,
     };
     let job = sdk.prove_cairo0(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
-    fs::write("proof.json",result.proof.clone()).unwrap();
+    fs::write("proof.json", result.proof.clone()).unwrap();
     // //Values calculated using https://github.com/HerodotusDev/integrity
     assert_eq!(result.serialized_proof.len(), 3195);
     assert_eq!(
@@ -184,7 +184,6 @@ async fn test_cairo0_prove() {
     let result = sdk.clone().verify(result.proof).await.unwrap();
     assert_eq!("true", result);
 }
-
 
 #[tokio::test]
 async fn test_cairo_multi_prove() {

@@ -25,7 +25,6 @@ pub async fn prove(args: Args, sdk: ProverSDK) -> Result<u64, ProveErrors> {
                 pow_bits: args.pow_bits,
                 n_queries: args.n_queries,
                 bootload: args.bootload,
-
             };
             sdk.prove_cairo0(data).await?
         }
