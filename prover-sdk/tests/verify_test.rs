@@ -40,6 +40,7 @@ async fn test_verify_valid_proof() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
+        bootload: false,
     };
     let job = sdk.clone().prove_cairo(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;

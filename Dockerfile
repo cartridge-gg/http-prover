@@ -40,8 +40,9 @@ RUN git clone --depth=1 -b v2.7.0-rc.3 https://github.com/starkware-libs/cairo.g
 RUN mv cairo/corelib/ .
 RUN rm -rf cairo
 
-RUN pip install cairo-lang==0.13.2
-RUN pip install sympy==1.12.1
+RUN git clone -b cairo-bootloader/all-in-one https://github.com/cartridge-gg/cairo-lang.git
+RUN pip install -r cairo-lang/scripts/requirements.txt
+RUN pip install aiofiles
 
 COPY --from=builder /app/target/release/prover /usr/local/bin/prover
 COPY --from=builder /usr/local/cargo/bin/cairo1-run /usr/local/bin/cairo1-run

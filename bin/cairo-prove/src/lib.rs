@@ -59,6 +59,8 @@ pub struct Args {
     pub n_queries: Option<u32>,
     #[arg(long, env)]
     pub pow_bits: Option<u32>,
+    #[arg(long, env, default_value = "false")]
+    pub bootload: bool,
 }
 
 fn validate_input(input: &str) -> Result<Vec<Felt>, ProveErrors> {
