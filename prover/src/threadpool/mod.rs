@@ -7,7 +7,7 @@ use tokio::{
     sync::{broadcast::Sender, mpsc, Mutex},
     task::JoinHandle,
 };
-use tracing::trace;
+use tracing::{error, trace};
 
 pub mod prove;
 pub mod run;
@@ -139,19 +139,38 @@ impl Worker {
 
                         if let Err(e) = prove(
                             job_id,
-                            job_store,
+                            job_store.clone(),
                             dir,
                             program_input,
-                            sse_tx,
+                            sse_tx.clone(),
                             n_queries,
                             pow_bits,
                             bootload,
                         )
                         .await
                         {
-                            eprintln!("Worker {id} encountered an error: {:?}", e);
+                            job_store
+                                .update_job_status(
+                                    job_id,
+                                    common::models::JobStatus::Failed,
+                                    Some(e.to_string()),
+                                )
+                                .await;
+                            let sender = sse_tx.clone();
+                            let sender = sender.lock().await;
+                            if sender.receiver_count() > 0 {
+                                sender
+                                    .send(
+                                        serde_json::to_string(&(
+                                            common::models::JobStatus::Failed,
+                                            job_id,
+                                        ))
+                                        .unwrap(),
+                                    )
+                                    .unwrap();
+                            }
+                            error!("Worker {id} encountered an error: {:?}", e);
                         }
-
                         trace!("Worker {id} finished the job.");
                     }
                     None => {
