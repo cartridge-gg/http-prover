@@ -5,11 +5,6 @@ resources:
   - prover.yaml
   - routes.yaml
 
-configMapGenerator:
-  - name: config
-    envs:
-      - .env.local
-      
 secretGenerator:
   - name: secret
     envs:

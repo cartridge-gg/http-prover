@@ -1,5 +1,6 @@
 use clap::{Parser, ValueEnum};
 use errors::ProveErrors;
+use prover_sdk::Layout;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::{path::PathBuf, str::FromStr};
@@ -35,7 +36,7 @@ pub struct Args {
     #[arg(long, short, env, default_value = "v1")]
     pub cairo_version: CairoVersion,
     #[arg(long, short, env)]
-    pub layout: String,
+    pub layout: Layout,
     #[arg(long, env)]
     pub program_path: PathBuf,
     #[arg(

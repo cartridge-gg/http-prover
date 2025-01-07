@@ -1,5 +1,3 @@
-use std::fs;
-
 use common::prover_input::*;
 use helpers::fetch_job;
 use prover_sdk::{access_key::ProverAccessKey, sdk::ProverSDK};
@@ -25,10 +23,9 @@ async fn test_cairo_prove_bootloader() {
         let felt = Felt::from_dec_str(part).unwrap();
         program_input.push(felt);
     }
-    let layout = "recursive".to_string();
     let data = CairoProverInput {
         program,
-        layout,
+        layout: Layout::Recursive,
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
@@ -38,7 +35,6 @@ async fn test_cairo_prove_bootloader() {
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
-    fs::write("../cairo1_boot_rec_proof.json", result.proof.clone()).unwrap();
     // //Values calculated using https://github.com/HerodotusDev/integrity
     assert_eq!(result.serialized_proof.len(), 3117);
     assert_eq!(
@@ -71,10 +67,9 @@ async fn test_cairo_prove() {
         let felt = Felt::from_dec_str(part).unwrap();
         program_input.push(felt);
     }
-    let layout = "recursive".to_string();
     let data = CairoProverInput {
         program,
-        layout,
+        layout: Layout::Recursive,
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
@@ -112,10 +107,9 @@ async fn test_cairo0_prove_bootloader() {
     let program: Cairo0CompiledProgram = serde_json::from_str(&program).unwrap();
     let program_input_string = std::fs::read_to_string("../examples/cairo0/input.json").unwrap();
     let program_input: Value = serde_json::from_str(&program_input_string).unwrap();
-    let layout = "recursive".to_string();
     let data = Cairo0ProverInput {
         program,
-        layout,
+        layout: Layout::Recursive,
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
@@ -125,7 +119,6 @@ async fn test_cairo0_prove_bootloader() {
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
-    fs::write("proof.json", result.proof.clone()).unwrap();
     // //Values calculated using https://github.com/HerodotusDev/integrity
     assert_eq!(result.serialized_proof.len(), 3195);
     assert_eq!(
@@ -154,10 +147,9 @@ async fn test_cairo0_prove() {
     let program: Cairo0CompiledProgram = serde_json::from_str(&program).unwrap();
     let program_input_string = std::fs::read_to_string("../examples/cairo0/input.json").unwrap();
     let program_input: Value = serde_json::from_str(&program_input_string).unwrap();
-    let layout = "recursive".to_string();
     let data = Cairo0ProverInput {
         program,
-        layout,
+        layout: Layout::Recursive,
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
@@ -200,10 +192,9 @@ async fn test_cairo_multi_prove() {
         let felt = Felt::from_dec_str(part).unwrap();
         program_input.push(felt);
     }
-    let layout = "recursive".to_string();
     let data = CairoProverInput {
         program,
-        layout,
+        layout: Layout::Recursive,
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),

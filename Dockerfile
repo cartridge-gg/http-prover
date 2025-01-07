@@ -50,7 +50,9 @@ COPY --from=prover /usr/bin/cpu_air_prover /usr/local/bin/cpu_air_prover
 COPY --from=prover /usr/bin/cpu_air_verifier /usr/local/bin/cpu_air_verifier
 
 COPY --from=builder /app/config/cpu_air_prover_config.json /config/cpu_air_prover_config.json
+COPY --from=builder /app/scripts/compile_bootloaders.sh /scripts/compile_bootloaders.sh
 
+RUN scripts/compile_bootloaders.sh
 
 EXPOSE 3000
 
