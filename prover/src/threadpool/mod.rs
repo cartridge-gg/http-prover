@@ -24,6 +24,7 @@ type ReceiverType = Arc<
             Arc<Mutex<Sender<String>>>,
             Option<u32>,
             Option<u32>,
+            bool,
         )>,
     >,
 >;
@@ -36,6 +37,7 @@ type SenderType = Option<
         Arc<Mutex<Sender<String>>>,
         Option<u32>,
         Option<u32>,
+        bool,
     )>,
 >;
 pub struct ExecuteParams {
@@ -46,6 +48,7 @@ pub struct ExecuteParams {
     pub sse_tx: Arc<Mutex<Sender<String>>>,
     pub n_queries: Option<u32>,
     pub pow_bits: Option<u32>,
+    pub bootload: bool,
 }
 pub struct ThreadPool {
     workers: Vec<Worker>,
@@ -86,6 +89,7 @@ impl ThreadPool {
                 params.sse_tx,
                 params.n_queries,
                 params.pow_bits,
+                params.bootload,
             ))
             .await?;
         Ok(())
@@ -121,7 +125,16 @@ impl Worker {
             loop {
                 let message = receiver.lock().await.recv().await;
                 match message {
-                    Some((job_id, job_store, dir, program_input, sse_tx, n_queries, pow_bits)) => {
+                    Some((
+                        job_id,
+                        job_store,
+                        dir,
+                        program_input,
+                        sse_tx,
+                        n_queries,
+                        pow_bits,
+                        bootload,
+                    )) => {
                         trace!("Worker {id} got a job; executing.");
 
                         if let Err(e) = prove(
@@ -132,6 +145,7 @@ impl Worker {
                             sse_tx,
                             n_queries,
                             pow_bits,
+                            bootload,
                         )
                         .await
                         {

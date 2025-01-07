@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use common::prover_input::{Cairo0ProverInput, CairoProverInput};
+use common::prover_input::{Cairo0ProverInput, CairoProverInput, Layout};
 use starknet_types_core::felt::Felt;
 use tokio::process::Command;
 use tracing::trace;
@@ -12,11 +12,29 @@ pub enum CairoVersionedInput {
     Cairo(CairoProverInput),
     Cairo0(Cairo0ProverInput),
 }
+pub trait BootloaderPath {
+    fn path(&self) -> PathBuf;
+}
 
+impl BootloaderPath for Layout {
+    fn path(&self) -> PathBuf {
+        match self {
+            Layout::Recursive => "bootloaders/recursive.json".into(),
+            Layout::RecursiveWithPoseidon => "bootloaders/recursive_with_poseidon.json".into(),
+            Layout::Starknet => "bootloaders/starknet.json".into(),
+            Layout::StarknetWithKeccak => "bootloaders/starknet_with_keccak.json".into(),
+            Layout::Dex | Layout::Small => panic!("Invalid layout"), //TODO: Handle this case
+        }
+    }
+}
 impl CairoVersionedInput {
-    pub async fn prepare_and_run(&self, paths: &'_ RunPaths<'_>) -> Result<(), ProverError> {
+    pub async fn prepare_and_run(
+        &self,
+        paths: &'_ RunPaths<'_>,
+        bootloader: bool,
+    ) -> Result<(), ProverError> {
         self.prepare(paths)?;
-        self.run(paths).await
+        self.run(paths, bootloader).await
     }
     fn prepare(&self, paths: &RunPaths<'_>) -> Result<(), ProverError> {
         match self {
@@ -36,17 +54,37 @@ impl CairoVersionedInput {
         }
         Ok(())
     }
-    async fn run(&self, paths: &RunPaths<'_>) -> Result<(), ProverError> {
+    async fn run(&self, paths: &RunPaths<'_>, bootloader: bool) -> Result<(), ProverError> {
         match self {
             CairoVersionedInput::Cairo(input) => {
                 trace!("Running cairo1-run");
-                let command = paths.cairo1_run_command(&input.layout);
-                command_run(command).await
+                if bootloader {
+                    let command = paths.cairo1_pie_command(&input.layout.to_string());
+                    command_run(command).await?;
+                    let pie_file_str = paths.pie_output.to_str().unwrap();
+                    let program_input_file_str = paths.program_input_path.to_str().unwrap();
+                    create_template(pie_file_str, program_input_file_str)?;
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader);
+                    command_run(command).await
+                } else {
+                    let command = paths.cairo1_run_command(&input.layout.to_string());
+                    command_run(command).await
+                }
             }
             CairoVersionedInput::Cairo0(input) => {
                 trace!("Running cairo0-run");
-                let command = paths.cairo0_run_command(&input.layout);
-                command_run(command).await
+                if bootloader {
+                    let command = paths.cairo0_pie_command(&input.layout.to_string());
+                    command_run(command).await?;
+                    let pie_file_str = paths.pie_output.to_str().unwrap();
+                    let program_input_file_str = paths.program_input_path.to_str().unwrap();
+                    create_template(pie_file_str, program_input_file_str)?;
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader);
+                    command_run(command).await
+                } else {
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader);
+                    command_run(command).await
+                }
             }
         }
     }
@@ -59,6 +97,7 @@ pub struct RunPaths<'a> {
     private_input_file: &'a PathBuf,
     program_input_path: &'a PathBuf,
     program: &'a PathBuf,
+    pie_output: &'a PathBuf,
 }
 
 impl RunPaths<'_> {
@@ -81,9 +120,16 @@ impl RunPaths<'_> {
             .arg(self.program);
         command
     }
-    pub fn cairo0_run_command(&self, layout: &str) -> Command {
-        let mut command = Command::new("cairo-run");
+    pub fn cairo0_run_command(&self, layout: Layout, bootloader: bool) -> Command {
+        let program = if bootloader && layout.is_bootloadable() {
+            layout.path()
+        } else {
+            self.program.to_path_buf()
+        };
+        let layout = layout.to_string();
+        let mut command = Command::new("python");
         command
+            .arg("cairo-lang/src/starkware/cairo/lang/scripts/cairo-run")
             .arg("--trace_file")
             .arg(self.trace_file)
             .arg("--memory_file")
@@ -98,7 +144,34 @@ impl RunPaths<'_> {
             .arg("--program_input")
             .arg(self.program_input_path)
             .arg("--program")
-            .arg(self.program);
+            .arg(program);
+        command
+    }
+    pub fn cairo0_pie_command(&self, layout: &str) -> Command {
+        let mut command = Command::new("python");
+        command
+            .arg("cairo-lang/src/starkware/cairo/lang/scripts/cairo-run")
+            .arg("--layout")
+            .arg(layout)
+            .arg("--program_input")
+            .arg(self.program_input_path)
+            .arg("--program")
+            .arg(self.program)
+            .arg("--cairo_pie_output")
+            .arg(self.pie_output);
+        command
+    }
+    pub fn cairo1_pie_command(&self, layout: &str) -> Command {
+        let mut command = Command::new("cairo1-run");
+        command
+            .arg("--layout")
+            .arg(layout)
+            .arg("--args_file")
+            .arg(self.program_input_path)
+            .arg(self.program)
+            .arg("--cairo_pie_output")
+            .arg(self.pie_output)
+            .arg("--append_return_values");
         command
     }
 }
@@ -112,6 +185,7 @@ impl<'a> From<&'a ProvePaths> for RunPaths<'a> {
             private_input_file,
             program_input: program_input_path,
             program: program_path,
+            pie_output,
             ..
         }: &'a ProvePaths,
     ) -> Self {
@@ -122,6 +196,7 @@ impl<'a> From<&'a ProvePaths> for RunPaths<'a> {
             private_input_file,
             program_input_path,
             program: program_path,
+            pie_output,
         }
     }
 }
@@ -158,4 +233,24 @@ fn test_prepare_input() {
         "[1 2 3 4]",
         prepare_input(&[1.into(), 2.into(), 3.into(), 4.into()])
     );
+}
+
+fn create_template(pie_path: &str, file_path: &str) -> std::io::Result<()> {
+    // Manually format the JSON string
+    let json = format!(
+        r#"{{
+  "tasks": [
+    {{
+      "type": "CairoPiePath",
+      "path": "{}",
+      "use_poseidon": true
+    }}
+  ],
+  "single_page": true
+}}"#,
+        pie_path
+    );
+
+    // Write the JSON string to the file
+    fs::write(file_path, json)
 }

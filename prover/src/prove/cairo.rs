@@ -25,8 +25,9 @@ pub async fn root(
         sse_tx: app_state.sse_tx.clone(),
         n_queries: program_input.clone().n_queries,
         pow_bits: program_input.pow_bits,
+        bootload: program_input.bootload,
     };
-    thread.execute(execution_params).await.into_response();
+    let _ = thread.execute(execution_params).await.into_response();
 
     let body = json!({
         "job_id": job_id

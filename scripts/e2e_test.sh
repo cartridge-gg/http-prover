@@ -4,7 +4,7 @@ set -eux
 IMAGE_NAME="http-prover-test"
 CONTAINER_ENGINE="${CONTAINER_ENGINE:-docker}"
 # Check if the image already exists
-if $CONTAINER_ENGINE images | grep -q "$IMAGE_NAME"; then
+if $CONTAINER_ENGINE images | grep -q "${IMAGE_NAME}"; then
     echo "Image $IMAGE_NAME already exists. Skipping build step."
 else
     echo "Image $IMAGE_NAME does not exist. Building the image..."

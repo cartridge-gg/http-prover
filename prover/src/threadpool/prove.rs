@@ -17,6 +17,7 @@ use tokio::process::Command;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::Mutex;
 
+#[allow(clippy::too_many_arguments)]
 pub async fn prove(
     job_id: u64,
     job_store: JobStore,
@@ -25,6 +26,7 @@ pub async fn prove(
     sse_tx: Arc<Mutex<Sender<String>>>,
     n_queries: Option<u32>,
     pow_bits: Option<u32>,
+    bootload: bool,
 ) -> Result<(), ProverError> {
     job_store
         .update_job_status(job_id, JobStatus::Running, None)
@@ -33,7 +35,7 @@ pub async fn prove(
     let paths = ProvePaths::new(dir);
 
     program_input
-        .prepare_and_run(&RunPaths::from(&paths))
+        .prepare_and_run(&RunPaths::from(&paths), bootload)
         .await?;
     Template::generate_from_public_input_file(&paths.public_input_file, n_queries, pow_bits)?
         .save_to_file(&paths.params_file)?;
@@ -47,10 +49,10 @@ pub async fn prove(
     if prove_status.success() {
         let prover_result = match program_input {
             CairoVersionedInput::Cairo(_cairo_input) => {
-                prover_result(final_result, CairoVersion::Cairo)?
+                prover_result(final_result, CairoVersion::Cairo, bootload)?
             }
             CairoVersionedInput::Cairo0(_cairo0_input) => {
-                prover_result(final_result, CairoVersion::Cairo0)?
+                prover_result(final_result, CairoVersion::Cairo0, bootload)?
             }
         };
         job_store
@@ -78,14 +80,19 @@ pub async fn prove(
     Ok(())
 }
 
-fn prover_result(proof: String, cairo_version: CairoVersion) -> Result<ProverResult, ProverError> {
+fn prover_result(
+    proof: String,
+    cairo_version: CairoVersion,
+    bootload: bool,
+) -> Result<ProverResult, ProverError> {
     let proof_json = serde_json::from_str::<ProofJSON>(&proof)?;
     let proof_from_annotations = proof_from_annotations(proof_json)?;
-    let ExtractProgramResult { program_hash, .. } = if cairo_version == CairoVersion::Cairo0 {
-        proof_from_annotations.extract_program(CairoVersion::Cairo0)?
-    } else {
-        proof_from_annotations.extract_program(CairoVersion::Cairo)?
-    };
+    let ExtractProgramResult { program_hash, .. } =
+        if cairo_version == CairoVersion::Cairo0 || bootload {
+            proof_from_annotations.extract_program(CairoVersion::Cairo0)?
+        } else {
+            proof_from_annotations.extract_program(CairoVersion::Cairo)?
+        };
     let ExtractOutputResult {
         program_output,
         program_output_hash,
@@ -112,6 +119,7 @@ pub(super) struct ProvePaths {
     pub(super) private_input_file: PathBuf,
     pub(super) params_file: PathBuf,
     pub(super) config_file: PathBuf,
+    pub(super) pie_output: PathBuf,
 }
 
 impl ProvePaths {
@@ -127,6 +135,7 @@ impl ProvePaths {
             private_input_file: path.join("program_private_input.json"),
             params_file: path.join("cpu_air_params.json"),
             config_file: PathBuf::from_str("config/cpu_air_prover_config.json").unwrap(),
+            pie_output: path.join("program_pie_output.zip"),
         }
     }
     pub fn prove_command(&self) -> Command {

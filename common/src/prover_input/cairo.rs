@@ -1,13 +1,16 @@
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
+use super::Layout;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CairoProverInput {
     pub program: CairoCompiledProgram,
     pub program_input: Vec<Felt>,
-    pub layout: String,
+    pub layout: Layout,
     pub n_queries: Option<u32>,
     pub pow_bits: Option<u32>,
+    pub bootload: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -28,7 +28,7 @@
 # Ignores
 **/.gitignore
 **/.dockerignore
-
+**/k8s
 # Envs
 **/*.cargo
 
@@ -43,3 +43,5 @@ examples/CairoZero/prover_input.json
 /corelib
 
 .idea/
+
+k8s

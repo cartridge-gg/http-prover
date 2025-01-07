@@ -33,13 +33,13 @@ async fn test_verify_valid_proof() {
         let felt = Felt::from_dec_str(part).unwrap();
         program_input.push(felt);
     }
-    let layout = "recursive".to_string();
     let data = CairoProverInput {
         program,
-        layout,
+        layout: Layout::Recursive,
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
+        bootload: false,
     };
     let job = sdk.clone().prove_cairo(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;

@@ -27,3 +27,4 @@ examples/Cairo/prover_input.json
 examples/CairoZero/prover_input.json
 /corelib
 
+.env
