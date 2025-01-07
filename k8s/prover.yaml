@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prover
+  labels:
+    app.kubernetes.io/name: prover
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prover
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prover
+    spec:
+      containers:
+      - name: http-prover
+        image: docker.io/chudas/http-prover:v0.1
+        ports:
+          - containerPort: 3000
+        envFrom:
+          - secretRef:
+              name: secret
+          - configMapRef:
+              name: config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prover
+spec:
+  selector:
+    app.kubernetes.io/name: prover
+  ports:
+    - name: tcp
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+    - name: udp # do we use UDP?
+      protocol: UDP 
+      port: 80
+      targetPort: 3000
+      
