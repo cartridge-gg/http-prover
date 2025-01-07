@@ -16,6 +16,7 @@ use tempfile::TempDir;
 use tokio::process::Command;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::Mutex;
+use tracing::trace;
 
 #[allow(clippy::too_many_arguments)]
 pub async fn prove(
@@ -39,7 +40,7 @@ pub async fn prove(
         .await?;
     Template::generate_from_public_input_file(&paths.public_input_file, n_queries, pow_bits)?
         .save_to_file(&paths.params_file)?;
-
+    trace!("Running prover");
     let prove_status = paths.prove_command().spawn()?.wait().await?;
     let result = fs::read_to_string(&paths.proof_path)?;
     let proof: Value = serde_json::from_str(&result)?;
