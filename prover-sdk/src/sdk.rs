@@ -43,11 +43,17 @@ impl ProverSDK {
     }
 
     pub async fn prove_cairo0(&self, data: Cairo0ProverInput) -> Result<u64, SdkErrors> {
+        if !data.layout.is_bootloadable() && data.bootload {
+            return Err(SdkErrors::BootloaderError);
+        }
         self.prove(ProverInput::Cairo0(data), self.prover_cairo0.clone())
             .await
     }
 
     pub async fn prove_cairo(&self, data: CairoProverInput) -> Result<u64, SdkErrors> {
+        if !data.layout.is_bootloadable() && data.bootload {
+            return Err(SdkErrors::BootloaderError);
+        }
         self.prove(ProverInput::Cairo(data), self.prover_cairo.clone())
             .await
     }

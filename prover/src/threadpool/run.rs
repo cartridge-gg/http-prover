@@ -13,17 +13,19 @@ pub enum CairoVersionedInput {
     Cairo0(Cairo0ProverInput),
 }
 pub trait BootloaderPath {
-    fn path(&self) -> PathBuf;
+    fn path(&self) -> Result<PathBuf, ProverError>;
 }
 
 impl BootloaderPath for Layout {
-    fn path(&self) -> PathBuf {
+    fn path(&self) -> Result<PathBuf, ProverError> {
         match self {
-            Layout::Recursive => "bootloaders/recursive.json".into(),
-            Layout::RecursiveWithPoseidon => "bootloaders/recursive_with_poseidon.json".into(),
-            Layout::Starknet => "bootloaders/starknet.json".into(),
-            Layout::StarknetWithKeccak => "bootloaders/starknet_with_keccak.json".into(),
-            Layout::Dex | Layout::Small => panic!("Invalid layout"), //TODO: Handle this case
+            Layout::Recursive => Ok("bootloaders/recursive.json".into()),
+            Layout::RecursiveWithPoseidon => Ok("bootloaders/recursive_with_poseidon.json".into()),
+            Layout::Starknet => Ok("bootloaders/starknet.json".into()),
+            Layout::StarknetWithKeccak => Ok("bootloaders/starknet_with_keccak.json".into()),
+            Layout::Dex | Layout::Small => {
+                Err(ProverError::CustomError("Invalid layout".to_string()))
+            }
         }
     }
 }
@@ -64,7 +66,7 @@ impl CairoVersionedInput {
                     let pie_file_str = paths.pie_output.to_str().unwrap();
                     let program_input_file_str = paths.program_input_path.to_str().unwrap();
                     create_template(pie_file_str, program_input_file_str)?;
-                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader);
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
                     command_run(command).await
                 } else {
                     let command = paths.cairo1_run_command(&input.layout.to_string());
@@ -79,10 +81,10 @@ impl CairoVersionedInput {
                     let pie_file_str = paths.pie_output.to_str().unwrap();
                     let program_input_file_str = paths.program_input_path.to_str().unwrap();
                     create_template(pie_file_str, program_input_file_str)?;
-                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader);
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
                     command_run(command).await
                 } else {
-                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader);
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
                     command_run(command).await
                 }
             }
@@ -120,9 +122,13 @@ impl RunPaths<'_> {
             .arg(self.program);
         command
     }
-    pub fn cairo0_run_command(&self, layout: Layout, bootloader: bool) -> Command {
+    pub fn cairo0_run_command(
+        &self,
+        layout: Layout,
+        bootloader: bool,
+    ) -> Result<Command, ProverError> {
         let program = if bootloader && layout.is_bootloadable() {
-            layout.path()
+            layout.path()?
         } else {
             self.program.to_path_buf()
         };
@@ -145,7 +151,7 @@ impl RunPaths<'_> {
             .arg(self.program_input_path)
             .arg("--program")
             .arg(program);
-        command
+        Ok(command)
     }
     pub fn cairo0_pie_command(&self, layout: &str) -> Command {
         let mut command = Command::new("python");

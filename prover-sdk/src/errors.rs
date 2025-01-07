@@ -34,4 +34,8 @@ pub enum SdkErrors {
     VerifyResponseError(String),
     #[error("Invalid key")]
     InvalidKey,
+    #[error(
+        "Invalid layout for bootload, small and dex layouts are not supported with bootload option"
+    )]
+    BootloaderError,
 }

@@ -12,6 +12,9 @@ pub async fn main() -> Result<(), ProveErrors> {
     tracing_subscriber::fmt().init();
     let args = Args::parse();
     let access_key = ProverAccessKey::from_hex_string(&args.prover_access_key.clone())?;
+    if !args.layout.is_bootloadable() && args.bootload {
+        return Err(ProveErrors::Custom("Invalid layout for bootloading, supported layouts for bootloader: recursive, recursive_with_poseidon, starknet, starknet_with_keccak".to_string()));
+    }
     let sdk = ProverSDK::new(args.prover_url.clone(), access_key).await?;
     let job = prove(args.clone(), sdk.clone()).await?;
     if args.wait {
