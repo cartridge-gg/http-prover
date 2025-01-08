@@ -18,7 +18,7 @@ WORKDIR /app
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer!
 RUN cargo chef cook --release --recipe-path recipe.json
-RUN cargo install --git https://github.com/lambdaclass/cairo-vm --rev d2c056e4a89aec9901c176f056dbcc58dd4660e5 cairo1-run
+RUN cargo install --git https://github.com/chudkowsky/cairo-vm.git --rev 6518777143224043c9dfad72c868843adb2c4145 cairo1-run
 RUN cargo build --release -p prover
 
 # Build application

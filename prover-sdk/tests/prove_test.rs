@@ -36,7 +36,7 @@ async fn test_cairo_prove_bootloader() {
     assert!(result.is_some());
     let result = result.unwrap();
     // //Values calculated using https://github.com/HerodotusDev/integrity
-    assert_eq!(result.serialized_proof.len(), 3117);
+    assert_eq!(result.serialized_proof.len(), 3150);
     assert_eq!(
         result.program_hash,
         Felt::from_hex("0x59c0bac6bc951237009c9c51711516b8a06d7b18acc37d53563f6ad4014d978")
@@ -44,7 +44,7 @@ async fn test_cairo_prove_bootloader() {
     );
     assert_eq!(
         result.program_output_hash,
-        Felt::from_hex("0x7216da28237d9a39cbb472112b92178ecaf8440bba0edb0ad15bb1e93742a54")
+        Felt::from_hex("0x4750a6b33e72cdbfdf16e50b8399de348306ef213d3131868b570dbbc836fa8")
             .unwrap()
     );
     let result = sdk.clone().verify(result.proof).await;
@@ -80,15 +80,15 @@ async fn test_cairo_prove() {
     assert!(result.is_some());
     let result = result.unwrap();
     // //Values calculated using https://github.com/HerodotusDev/integrity
-    assert_eq!(result.serialized_proof.len(), 2469);
+    assert_eq!(result.serialized_proof.len(), 2425);
     assert_eq!(
         result.program_hash,
-        Felt::from_hex("0x4fa9237f64ebf68987209abe5058c32961131e3e5f16383d832dba7a6a5c937")
+        Felt::from_hex("0x107db7f77b9886a14ae24f828ba20ba44830d2947a2cade503c637a4e0babdb")
             .unwrap()
     );
     assert_eq!(
         result.program_output_hash,
-        Felt::from_hex("0x4dd3006138ea865d5610d65e02fd227b7436acc95e4b2ec30f5a21356ea6205")
+        Felt::from_hex("0x21085a88ad099f8cbe2038f73cb2934abcc380ace4b598e4b52be04eb184b2f")
             .unwrap()
     );
     let result = sdk.clone().verify(result.proof).await;
