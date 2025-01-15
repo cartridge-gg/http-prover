@@ -13,7 +13,7 @@ use nonce::generate_nonce;
 use register::register;
 use validation::validate_signature;
 
-pub fn auth(app_state: AppState) -> Router {
+pub fn auth(app_state: &AppState) -> Router {
     Router::new()
         .route("/auth", get(generate_nonce))
         .route("/auth", post(validate_signature))

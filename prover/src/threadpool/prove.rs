@@ -51,10 +51,10 @@ pub async fn prove(
     if prove_status.success() {
         let prover_result = match program_input {
             CairoVersionedInput::Cairo(_cairo_input) => {
-                prover_result(final_result, CairoVersion::Cairo, bootload)?
+                prover_result(&final_result, CairoVersion::Cairo, bootload)?
             }
             CairoVersionedInput::Cairo0(_cairo0_input) => {
-                prover_result(final_result, CairoVersion::Cairo0, bootload)?
+                prover_result(&final_result, CairoVersion::Cairo0, bootload)?
             }
         };
         job_store
@@ -83,7 +83,7 @@ pub async fn prove(
 }
 
 fn prover_result(
-    proof: String,
+    proof: &str,
     cairo_version: CairoVersion,
     bootload: bool,
 ) -> Result<ProverResult, ProverError> {
@@ -101,7 +101,7 @@ fn prover_result(
     } = proof_from_annotations.extract_output()?;
     let serialized_proof = proof_from_annotations.to_felts();
     let prover_result = ProverResult {
-        proof: proof.clone(),
+        proof: proof.to_string(),
         program_hash,
         program_output,
         program_output_hash,

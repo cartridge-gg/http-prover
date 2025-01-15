@@ -24,6 +24,7 @@ tempfile = "3.12.0"
 serde = { version = "1.0.209", features = ["derive"] }
 common = { path = "common" }
 prover-sdk = { path = "prover-sdk" }
+prover = { path = "prover" }
 reqwest = { version = "0.11.27", features = [
     "blocking",
     "json",

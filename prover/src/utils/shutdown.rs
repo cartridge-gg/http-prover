@@ -23,10 +23,10 @@ pub async fn shutdown_signal(thread_pool: Arc<Mutex<ThreadPool>>) {
     let terminate = std::future::pending::<()>();
 
     tokio::select! {
-        _ = ctrl_c => {
+        () = ctrl_c => {
             info!("Shutting down the server");
         },
-        _ = terminate => {
+        () = terminate => {
             info!("Shutting down the server due to termination signal");
         },
     }

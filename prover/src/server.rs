@@ -88,7 +88,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         .route("/get-job/:id", get(get_job))
         .route("/sse", get(sse_handler))
         .with_state(app_state.clone())
-        .nest("/", auth(app_state.clone()))
+        .nest("/", auth(&app_state))
         .nest("/prove", prove::router(app_state.clone()))
         .nest("/run", run::router(app_state.clone()))
         .layer(DefaultBodyLimit::max(1024 * 1024 * 1000))

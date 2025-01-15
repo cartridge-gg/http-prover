@@ -48,9 +48,7 @@ pub struct Prove {
 impl Prove {
     pub async fn run(self) {
         let access_key = ProverAccessKey::from_hex_string(&self.prover_access_key.clone()).unwrap();
-        if !self.layout.is_bootloadable() && self.bootload {
-            panic!("Invalid layout for bootloading, supported layouts for bootloader: recursive, recursive_with_poseidon, starknet, starknet_with_keccak");
-        }
+        assert!(!(!self.layout.is_bootloadable() && self.bootload), "Invalid layout for bootloading, supported layouts for bootloader: recursive, recursive_with_poseidon, starknet, starknet_with_keccak");
         let sdk = ProverSDK::new(self.prover_url.clone(), access_key)
             .await
             .unwrap();

@@ -35,7 +35,7 @@ impl JobStore {
         self.inner
             .lock()
             .await
-            .update_job_status(job_id, status, result)
+            .update_job_status(job_id, status, result);
     }
     pub async fn get_job(&self, id: u64) -> Option<Job> {
         self.inner.lock().await.get_job(id)
@@ -116,7 +116,7 @@ pub async fn get_job(
                         .unwrap_or_else(|| "Unknown error".to_string()),
                 }),
             ),
-            _ => (
+            JobStatus::Unknown => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(JobResponse::Failed {
                     error: "Unknown error".to_string(),

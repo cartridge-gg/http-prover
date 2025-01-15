@@ -134,7 +134,7 @@ impl CairoVersionedInput {
                     let pie_file_str = paths.pie_output.to_str().unwrap();
                     let program_input_file_str = paths.program_input_path.to_str().unwrap();
                     create_template(pie_file_str, program_input_file_str)?;
-                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
+                    let command = paths.cairo0_run_command(&input.layout, bootloader)?;
                     command_run(command).await
                 } else {
                     let command = paths.cairo1_run_command(&input.layout.to_string());
@@ -149,10 +149,10 @@ impl CairoVersionedInput {
                     let pie_file_str = paths.pie_output.to_str().unwrap();
                     let program_input_file_str = paths.program_input_path.to_str().unwrap();
                     create_template(pie_file_str, program_input_file_str)?;
-                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
+                    let command = paths.cairo0_run_command(&input.layout, bootloader)?;
                     command_run(command).await
                 } else {
-                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
+                    let command = paths.cairo0_run_command(&input.layout, bootloader)?;
                     command_run(command).await
                 }
             }
@@ -192,13 +192,13 @@ impl RunPaths<'_> {
     }
     pub fn cairo0_run_command(
         &self,
-        layout: Layout,
+        layout: &Layout,
         bootloader: bool,
     ) -> Result<Command, ProverError> {
         let program = if bootloader && layout.is_bootloadable() {
             layout.path()?
         } else {
-            self.program.to_path_buf()
+            self.program.clone()
         };
         let layout = layout.to_string();
         let mut command = Command::new("python");

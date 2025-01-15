@@ -2073,6 +2073,7 @@ dependencies = [
  "clap",
  "common",
  "ed25519-dalek",
+ "prover",
  "prover-sdk",
  "reqwest 0.11.27",
  "serde",

@@ -6,6 +6,8 @@ use run::CairoRunner;
 pub mod prove;
 use prove::Prove;
 
+pub mod config;
+use config::ConfigGenerator;
 pub mod common;
 pub mod errors;
 pub mod fetch;
@@ -23,6 +25,8 @@ enum Subcommands {
     Prove(Prove),
     #[clap(about = "Run cairo programs")]
     Run(CairoRunner),
+    #[clap(about = "Generate config based on provided public input")]
+    Config(ConfigGenerator),
 }
 
 #[tokio::main]
@@ -34,6 +38,9 @@ pub async fn main() {
         }
         Subcommands::Run(run) => {
             run.run().await;
+        }
+        Subcommands::Config(config) => {
+            config.run();
         }
     }
 }
