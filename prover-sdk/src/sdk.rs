@@ -123,9 +123,7 @@ impl ProverSDK {
     }
     pub async fn get_job(&self, job_id: u64) -> Result<Response, SdkErrors> {
         let url = format!("{}/{}", self.get_job.clone().as_str(), job_id);
-        println!("here");
         let response = self.client.get(url).send().await?;
-        println!("here2");
         if !response.status().is_success() {
             let response_data: String = response.text().await?;
             println!("{}", response_data);

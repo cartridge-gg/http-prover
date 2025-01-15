@@ -20,8 +20,9 @@ pub enum JobStatus {
     Unknown,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct ProverResult {
+    #[serde(skip_serializing)]
     pub proof: String,
     pub serialized_proof: Vec<Felt>,
     pub program_hash: Felt,
@@ -56,4 +57,20 @@ pub enum JobResponse {
     Failed {
         error: String,
     },
+}
+use serde::ser::{SerializeStruct, Serializer};
+
+impl Serialize for ProverResult {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("ProverResult", 5)?;
+        state.serialize_field("proof", &self.proof)?;
+        state.serialize_field("serialized_proof", &self.serialized_proof)?;
+        state.serialize_field("program_hash", &self.program_hash)?;
+        state.serialize_field("program_output", &self.program_output)?;
+        state.serialize_field("program_output_hash", &self.program_output_hash)?;
+        state.end()
+    }
 }
