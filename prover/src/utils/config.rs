@@ -115,13 +115,3 @@ impl ProgramPublicInputAsNSteps {
         steps
     }
 }
-
-#[test]
-pub fn test() {
-    let path = PathBuf::from("/home/mateuszchudkowski/dev/cartdrige_lang/proof_files/pub.json");
-    let path2 = PathBuf::from("/home/mateuszchudkowski/dev/cartdrige_lang/proof_files/config.json");
-    Template::generate_from_public_input_file(&path, Some(10), Some(20))
-        .unwrap()
-        .save_to_file(&path2)
-        .unwrap();
-}
