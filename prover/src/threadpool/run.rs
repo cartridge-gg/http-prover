@@ -1,13 +1,21 @@
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, sync::Arc};
 
-use common::prover_input::{Cairo0ProverInput, CairoProverInput, Layout};
+use common::{
+    models::{JobResult, JobStatus, RunResult},
+    prover_input::{Cairo0ProverInput, CairoProverInput, Layout},
+};
 use starknet_types_core::felt::Felt;
-use tokio::process::Command;
+use tempfile::tempdir;
+use tokio::{
+    process::Command,
+    sync::{broadcast::Sender, Mutex},
+};
 use tracing::trace;
 
-use crate::errors::ProverError;
+use crate::{errors::ProverError, utils::job::JobStore};
 
 use super::prove::ProvePaths;
+#[derive(Clone)]
 pub enum CairoVersionedInput {
     Cairo(CairoProverInput),
     Cairo0(Cairo0ProverInput),
@@ -29,6 +37,62 @@ impl BootloaderPath for Layout {
         }
     }
 }
+
+pub async fn run(
+    job_id: u64,
+    job_store: JobStore,
+    program_input: CairoVersionedInput,
+    sse_tx: Arc<Mutex<Sender<String>>>,
+) -> Result<(), ProverError> {
+    let dir = tempdir()?;
+    job_store
+        .update_job_status(job_id, JobStatus::Running, None)
+        .await;
+
+    let paths = ProvePaths::new(dir);
+
+    let result = program_input
+        .prepare_and_run(&RunPaths::from(&paths), false)
+        .await;
+    let sender = sse_tx.lock().await;
+    if result.is_ok() {
+        let memory = fs::read(&paths.memory_file)?;
+        let trace = fs::read(&paths.trace_file)?;
+        let public_input = fs::read_to_string(paths.public_input_file)?;
+        let private_input = fs::read_to_string(paths.private_input_file)?;
+        let runner_result = RunResult {
+            memory,
+            trace,
+            public_input,
+            private_input,
+            pie: None,
+        };
+        job_store
+            .update_job_status(
+                job_id,
+                JobStatus::Completed,
+                serde_json::to_string(&JobResult::Run(runner_result)).ok(),
+            )
+            .await;
+        if sender.receiver_count() > 0 {
+            sender
+                .send(serde_json::to_string(&(JobStatus::Completed, job_id))?)
+                .unwrap();
+        }
+    } else {
+        result.unwrap();
+        job_store
+            .update_job_status(job_id, JobStatus::Failed, None)
+            .await;
+        if sender.receiver_count() > 0 {
+            sender
+                .send(serde_json::to_string(&(JobStatus::Failed, job_id))?)
+                .unwrap();
+        }
+    }
+    Ok(())
+}
+
 impl CairoVersionedInput {
     pub async fn prepare_and_run(
         &self,
@@ -36,7 +100,7 @@ impl CairoVersionedInput {
         bootloader: bool,
     ) -> Result<(), ProverError> {
         self.prepare(paths)?;
-        self.run(paths, bootloader).await
+        self.run_internal(paths, bootloader).await
     }
     fn prepare(&self, paths: &RunPaths<'_>) -> Result<(), ProverError> {
         match self {
@@ -56,7 +120,11 @@ impl CairoVersionedInput {
         }
         Ok(())
     }
-    async fn run(&self, paths: &RunPaths<'_>, bootloader: bool) -> Result<(), ProverError> {
+    async fn run_internal(
+        &self,
+        paths: &RunPaths<'_>,
+        bootloader: bool,
+    ) -> Result<(), ProverError> {
         match self {
             CairoVersionedInput::Cairo(input) => {
                 trace!("Running cairo1-run");

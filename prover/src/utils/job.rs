@@ -4,8 +4,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use common::models::{JobStatus, ProverResult};
-use serde::{Deserialize, Serialize};
+use common::models::{JobResponse, JobStatus};
 use std::{
     collections::BTreeMap,
     sync::Arc,
@@ -21,22 +20,6 @@ pub struct Job {
     pub status: JobStatus,
     pub result: Option<String>,
     pub created: Instant,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum JobResponse {
-    InProgress {
-        id: u64,
-        status: JobStatus,
-    },
-    Completed {
-        result: ProverResult,
-        status: JobStatus,
-    },
-    Failed {
-        error: String,
-    },
 }
 
 #[derive(Default, Clone)]

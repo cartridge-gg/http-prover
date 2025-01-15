@@ -2,6 +2,7 @@ pub mod auth;
 pub mod errors;
 pub mod extractors;
 pub mod prove;
+pub mod run;
 pub mod server;
 pub mod sse;
 pub mod threadpool;

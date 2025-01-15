@@ -26,7 +26,7 @@ pub async fn prove(args: Args, sdk: ProverSDK) -> Result<u64, ProveErrors> {
                 n_queries: args.n_queries,
                 bootload: args.bootload,
             };
-            sdk.prove_cairo0(data).await?
+            sdk.run_cairo0(data).await?
         }
         CairoVersion::V1 => {
             let input = match args.clone().program_input_path {

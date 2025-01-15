@@ -12,7 +12,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
-use tempfile::TempDir;
+use tempfile::{tempdir, TempDir};
 use tokio::process::Command;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::Mutex;
@@ -22,13 +22,13 @@ use tracing::trace;
 pub async fn prove(
     job_id: u64,
     job_store: JobStore,
-    dir: TempDir,
     program_input: CairoVersionedInput,
     sse_tx: Arc<Mutex<Sender<String>>>,
     n_queries: Option<u32>,
     pow_bits: Option<u32>,
     bootload: bool,
 ) -> Result<(), ProverError> {
+    let dir = tempdir()?;
     job_store
         .update_job_status(job_id, JobStatus::Running, None)
         .await;
@@ -38,6 +38,7 @@ pub async fn prove(
     program_input
         .prepare_and_run(&RunPaths::from(&paths), bootload)
         .await?;
+    println!("Running prover");
     Template::generate_from_public_input_file(&paths.public_input_file, n_queries, pow_bits)?
         .save_to_file(&paths.params_file)?;
     trace!("Running prover");

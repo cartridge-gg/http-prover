@@ -1,7 +1,7 @@
 use crate::auth::jwt::Claims;
 use crate::server::AppState;
 use crate::threadpool::{
-    task::{ProveParams, Task, TaskCommon},
+    task::{RunParams, Task, TaskCommon},
     CairoVersionedInput,
 };
 use axum::Json;
@@ -18,23 +18,19 @@ pub async fn root(
     let job_store = app_state.job_store.clone();
     let job_id = job_store.create_job().await;
     let thread = thread_pool.lock().await;
-    let task_base = TaskCommon {
+    let common = TaskCommon {
         job_id,
         job_store,
         sse_tx: app_state.sse_tx.clone(),
     };
-    let execution_params = ProveParams {
-        common: task_base,
+    let execution_params = RunParams {
+        common,
         program_input: CairoVersionedInput::Cairo(program_input.clone()),
-        n_queries: program_input.clone().n_queries,
-        pow_bits: program_input.pow_bits,
-        bootload: program_input.bootload,
     };
     let _ = thread
-        .execute(Task::Prove(execution_params))
+        .execute(Task::Run(execution_params))
         .await
         .into_response();
-
     let body = json!({
         "job_id": job_id
     });
