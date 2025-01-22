@@ -7,6 +7,7 @@ use cairo_proof_parser::output::ExtractOutputResult;
 use cairo_proof_parser::program::{CairoVersion, ExtractProgramResult};
 use cairo_proof_parser::{self, ProofJSON};
 use common::models::{JobStatus, ProverResult};
+use common::prover_input::LayoutBridgeOrBootload;
 use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
@@ -26,7 +27,7 @@ pub async fn prove(
     sse_tx: Arc<Mutex<Sender<String>>>,
     n_queries: Option<u32>,
     pow_bits: Option<u32>,
-    bootload: bool,
+    run_option: &LayoutBridgeOrBootload,
 ) -> Result<(), ProverError> {
     let dir = tempdir()?;
     job_store
@@ -36,12 +37,14 @@ pub async fn prove(
     let paths = ProvePaths::new(dir);
 
     program_input
-        .prepare_and_run(&RunPaths::from(&paths), bootload)
+        .prepare_and_run(&RunPaths::from(&paths), run_option)
         .await?;
-    println!("Running prover");
+
     Template::generate_from_public_input_file(&paths.public_input_file, n_queries, pow_bits)?
         .save_to_file(&paths.params_file)?;
+
     trace!("Running prover");
+
     let prove_status = paths.prove_command().spawn()?.wait().await?;
     let result = fs::read_to_string(&paths.proof_path)?;
     let proof: Value = serde_json::from_str(&result)?;
@@ -49,14 +52,14 @@ pub async fn prove(
     let sender = sse_tx.lock().await;
 
     if prove_status.success() {
-        let prover_result = match program_input {
-            CairoVersionedInput::Cairo(_cairo_input) => {
-                prover_result(&final_result, CairoVersion::Cairo, bootload)?
-            }
-            CairoVersionedInput::Cairo0(_cairo0_input) => {
-                prover_result(&final_result, CairoVersion::Cairo0, bootload)?
-            }
+        let cairo_version = match program_input {
+            CairoVersionedInput::Cairo(_) => CairoVersion::Cairo,
+            CairoVersionedInput::Cairo0(_) => CairoVersion::Cairo0,
         };
+        let is_bootload = matches!(run_option.clone(), LayoutBridgeOrBootload::Bootload);
+
+        let prover_result = prover_result(&final_result, cairo_version, is_bootload)?;
+
         job_store
             .update_job_status(
                 job_id,
@@ -87,7 +90,7 @@ fn prover_result(
     cairo_version: CairoVersion,
     bootload: bool,
 ) -> Result<ProverResult, ProverError> {
-    let proof_json = serde_json::from_str::<ProofJSON>(&proof)?;
+    let proof_json = serde_json::from_str::<ProofJSON>(proof)?;
     let proof_from_annotations = proof_from_annotations(proof_json)?;
     let ExtractProgramResult { program_hash, .. } =
         if cairo_version == CairoVersion::Cairo0 || bootload {

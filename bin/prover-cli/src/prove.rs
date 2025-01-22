@@ -5,7 +5,7 @@ use clap::Parser;
 use common::models::JobResult;
 use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, Cairo0CompiledProgram, Cairo0ProverInput,
-    CairoCompiledProgram, CairoProverInput, Layout, ProverResult,
+    CairoCompiledProgram, CairoProverInput, Layout, LayoutBridgeOrBootload, ProverResult,
 };
 use serde_json::Value;
 use url::Url;
@@ -40,15 +40,15 @@ pub struct Prove {
     pub n_queries: Option<u32>,
     #[arg(long, env)]
     pub pow_bits: Option<u32>,
-    #[arg(long, env, default_value = "false")]
-    pub bootload: bool,
+    #[arg(long, env, default_value = "None")]
+    pub run_option: LayoutBridgeOrBootload,
     #[arg(long, env, default_value = "false")]
     pub full_output: bool,
 }
 impl Prove {
     pub async fn run(self) {
         let access_key = ProverAccessKey::from_hex_string(&self.prover_access_key.clone()).unwrap();
-        assert!(!(!self.layout.is_bootloadable() && self.bootload), "Invalid layout for bootloading, supported layouts for bootloader: recursive, recursive_with_poseidon, starknet, starknet_with_keccak");
+        assert!(!self.layout.is_bootloadable() && matches!(self.run_option,LayoutBridgeOrBootload::Bootload), "Invalid layout for bootloading, supported layouts for bootloader: recursive, recursive_with_poseidon, starknet, starknet_with_keccak");
         let sdk = ProverSDK::new(self.prover_url.clone(), access_key)
             .await
             .unwrap();
@@ -94,9 +94,9 @@ pub async fn prove(args: Prove, sdk: ProverSDK) -> u64 {
                 program_input,
                 pow_bits: args.pow_bits,
                 n_queries: args.n_queries,
-                bootload: args.bootload,
+                run_option: args.run_option,
             };
-            sdk.run_cairo0(data).await.unwrap()
+            sdk.prove_cairo0(data).await.unwrap()
         }
         CairoVersion::V1 => {
             let input = std::fs::read_to_string(args.program_input_path).unwrap();
@@ -108,7 +108,7 @@ pub async fn prove(args: Prove, sdk: ProverSDK) -> u64 {
                 program_input: input,
                 pow_bits: args.pow_bits,
                 n_queries: args.n_queries,
-                bootload: args.bootload,
+                run_option: args.run_option,
             };
             sdk.prove_cairo(data).await.unwrap()
         }

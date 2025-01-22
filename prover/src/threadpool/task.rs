@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use tokio::sync::{broadcast::Sender, Mutex};
 
-use tracing::info;
-
 use super::{run::run, CairoVersionedInput};
+use common::prover_input::LayoutBridgeOrBootload;
+use tracing::info;
 
 pub struct TaskCommon {
     pub job_id: u64,
@@ -19,12 +19,13 @@ pub struct ProveParams {
     pub program_input: CairoVersionedInput,
     pub n_queries: Option<u32>,
     pub pow_bits: Option<u32>,
-    pub bootload: bool,
+    pub run_option: LayoutBridgeOrBootload,
 }
 
 pub struct RunParams {
     pub common: TaskCommon,
     pub program_input: CairoVersionedInput,
+    pub run_option: LayoutBridgeOrBootload,
 }
 
 pub enum Task {
@@ -59,7 +60,7 @@ impl Task {
                     params.common.sse_tx.clone(),
                     params.n_queries,
                     params.pow_bits,
-                    params.bootload,
+                    &params.run_option,
                 )
                 .await
             }
@@ -70,6 +71,7 @@ impl Task {
                     params.common.job_store.clone(),
                     params.program_input.clone(),
                     params.common.sse_tx.clone(),
+                    &params.run_option,
                 )
                 .await
             }

@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf, sync::Arc};
 
 use common::{
     models::{JobResult, JobStatus, RunResult},
-    prover_input::{Cairo0ProverInput, CairoProverInput, Layout},
+    prover_input::{Cairo0ProverInput, CairoProverInput, Layout, LayoutBridgeOrBootload},
 };
 use starknet_types_core::felt::Felt;
 use tempfile::tempdir;
@@ -43,6 +43,7 @@ pub async fn run(
     job_store: JobStore,
     program_input: CairoVersionedInput,
     sse_tx: Arc<Mutex<Sender<String>>>,
+    run_option: &LayoutBridgeOrBootload,
 ) -> Result<(), ProverError> {
     let dir = tempdir()?;
     job_store
@@ -52,8 +53,9 @@ pub async fn run(
     let paths = ProvePaths::new(dir);
 
     let result = program_input
-        .prepare_and_run(&RunPaths::from(&paths), false)
+        .prepare_and_run(&RunPaths::from(&paths), run_option)
         .await;
+    trace!("Trace generated for job {}", job_id);
     let sender = sse_tx.lock().await;
     if result.is_ok() {
         let memory = fs::read(&paths.memory_file)?;
@@ -97,12 +99,16 @@ impl CairoVersionedInput {
     pub async fn prepare_and_run(
         &self,
         paths: &'_ RunPaths<'_>,
-        bootloader: bool,
+        run_option: &LayoutBridgeOrBootload,
     ) -> Result<(), ProverError> {
-        self.prepare(paths)?;
-        self.run_internal(paths, bootloader).await
+        self.prepare(paths, run_option)?;
+        self.run_internal(paths, run_option).await
     }
-    fn prepare(&self, paths: &RunPaths<'_>) -> Result<(), ProverError> {
+    fn prepare(
+        &self,
+        paths: &RunPaths<'_>,
+        run_option: &LayoutBridgeOrBootload,
+    ) -> Result<(), ProverError> {
         match self {
             CairoVersionedInput::Cairo(input) => {
                 let program = serde_json::to_string(&input.program)?;
@@ -111,11 +117,19 @@ impl CairoVersionedInput {
                 fs::write(paths.program_input_path, input)?;
             }
             CairoVersionedInput::Cairo0(input) => {
+                match run_option {
+                    LayoutBridgeOrBootload::LayoutBridge => {
+                        let layout_bridge_program = fs::read("layout_bridge.json")?;
+                        fs::write(paths.program, layout_bridge_program)?;
+                    }
+                    _ => {
+                        fs::write(paths.program, serde_json::to_string(&input.program)?)?;
+                    }
+                };
                 fs::write(
                     paths.program_input_path.clone(),
                     serde_json::to_string(&input.program_input)?,
                 )?;
-                fs::write(paths.program, serde_json::to_string(&input.program)?)?;
             }
         }
         Ok(())
@@ -123,39 +137,54 @@ impl CairoVersionedInput {
     async fn run_internal(
         &self,
         paths: &RunPaths<'_>,
-        bootloader: bool,
+        run_option: &LayoutBridgeOrBootload,
     ) -> Result<(), ProverError> {
         match self {
             CairoVersionedInput::Cairo(input) => {
                 trace!("Running cairo1-run");
-                if bootloader {
-                    let command = paths.cairo1_pie_command(&input.layout.to_string());
-                    command_run(command).await?;
-                    let pie_file_str = paths.pie_output.to_str().unwrap();
-                    let program_input_file_str = paths.program_input_path.to_str().unwrap();
-                    create_template(pie_file_str, program_input_file_str)?;
-                    let command = paths.cairo0_run_command(&input.layout, bootloader)?;
-                    command_run(command).await
-                } else {
-                    let command = paths.cairo1_run_command(&input.layout.to_string());
-                    command_run(command).await
+                match run_option {
+                    LayoutBridgeOrBootload::Bootload | LayoutBridgeOrBootload::LayoutBridge => {
+                        trace!("Generating PIE");
+
+                        let command = paths.cairo1_pie_command(&input.layout.to_string());
+                        command_run(command).await?;
+
+                        trace!("PIE generated");
+
+                        let pie_file_str = paths.pie_output.to_str().unwrap();
+                        let program_input_file_str = paths.program_input_path.to_str().unwrap();
+                        create_template(pie_file_str, program_input_file_str)?;
+
+                        trace!("Running cairo-run to generate trace from PIE");
+                        let command = paths.cairo0_run_command(&input.layout, true)?;
+                        command_run(command).await
+                    }
+                    LayoutBridgeOrBootload::None => {
+                        trace!("Running cairo-run to generate trace");
+                        let command = paths.cairo1_run_command(&input.layout.to_string());
+                        command_run(command).await
+                    }
                 }
             }
-            CairoVersionedInput::Cairo0(input) => {
-                trace!("Running cairo0-run");
-                if bootloader {
+            CairoVersionedInput::Cairo0(input) => match run_option {
+                LayoutBridgeOrBootload::LayoutBridge | LayoutBridgeOrBootload::Bootload => {
+                    trace!("Generating PIE");
                     let command = paths.cairo0_pie_command(&input.layout.to_string());
                     command_run(command).await?;
+
+                    trace!("PIE generated");
                     let pie_file_str = paths.pie_output.to_str().unwrap();
                     let program_input_file_str = paths.program_input_path.to_str().unwrap();
                     create_template(pie_file_str, program_input_file_str)?;
-                    let command = paths.cairo0_run_command(&input.layout, bootloader)?;
-                    command_run(command).await
-                } else {
-                    let command = paths.cairo0_run_command(&input.layout, bootloader)?;
+
+                    let command = paths.cairo0_run_command(&input.layout, true)?;
                     command_run(command).await
                 }
-            }
+                LayoutBridgeOrBootload::None => {
+                    let command = paths.cairo0_run_command(&input.layout, false)?;
+                    command_run(command).await
+                }
+            },
         }
     }
 }

@@ -7,12 +7,14 @@ use cairo_prove::{
 use clap::Parser;
 use prover_sdk::access_key::ProverAccessKey;
 use prover_sdk::sdk::ProverSDK;
+use prover_sdk::LayoutBridgeOrBootload;
 #[tokio::main]
 pub async fn main() -> Result<(), ProveErrors> {
     tracing_subscriber::fmt().init();
     let args = Args::parse();
     let access_key = ProverAccessKey::from_hex_string(&args.prover_access_key.clone())?;
-    if !args.layout.is_bootloadable() && args.bootload {
+    if !args.layout.is_bootloadable() && matches!(args.run_option, LayoutBridgeOrBootload::Bootload)
+    {
         return Err(ProveErrors::Custom("Invalid layout for bootloading, supported layouts for bootloader: recursive, recursive_with_poseidon, starknet, starknet_with_keccak".to_string()));
     }
     let sdk = ProverSDK::new(args.prover_url.clone(), access_key).await?;

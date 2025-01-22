@@ -26,6 +26,7 @@ pub async fn root(
     let execution_params = RunParams {
         common,
         program_input: CairoVersionedInput::Cairo(program_input.clone()),
+        run_option: program_input.run_option,
     };
     let _ = thread
         .execute(Task::Run(execution_params))

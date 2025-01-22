@@ -1,6 +1,6 @@
 use clap::{Parser, ValueEnum};
 use errors::ProveErrors;
-use prover_sdk::Layout;
+use prover_sdk::{Layout, LayoutBridgeOrBootload};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::{path::PathBuf, str::FromStr};
@@ -60,8 +60,8 @@ pub struct Args {
     pub n_queries: Option<u32>,
     #[arg(long, env)]
     pub pow_bits: Option<u32>,
-    #[arg(long, env, default_value = "false")]
-    pub bootload: bool,
+    #[arg(long, env, default_value = "None")]
+    pub run_option: LayoutBridgeOrBootload,
 }
 
 fn validate_input(input: &str) -> Result<Vec<Felt>, ProveErrors> {

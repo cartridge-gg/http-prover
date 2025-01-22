@@ -40,7 +40,9 @@ RUN git clone --depth=1 -b v2.7.0-rc.3 https://github.com/starkware-libs/cairo.g
 RUN mv cairo/corelib/ .
 RUN rm -rf cairo
 
-RUN git clone -b cairo-bootloader/all-in-one https://github.com/cartridge-gg/cairo-lang.git
+RUN git clone https://github.com/cartridge-gg/cairo-lang.git && \
+    cd cairo-lang && \
+    git checkout 13963e0
 RUN pip install -r cairo-lang/scripts/requirements.txt
 RUN pip install aiofiles
 
@@ -53,7 +55,7 @@ COPY --from=builder /app/config/cpu_air_prover_config.json /config/cpu_air_prove
 COPY --from=builder /app/scripts/compile_bootloaders.sh /scripts/compile_bootloaders.sh
 
 RUN scripts/compile_bootloaders.sh
-
+COPY ./layout_bridge.json /layout_bridge.json
 EXPOSE 3000
 
 ENTRYPOINT [ "prover" ]
