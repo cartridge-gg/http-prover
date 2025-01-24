@@ -1,6 +1,6 @@
-use super::run::RunPaths;
 use super::CairoVersionedInput;
 use crate::errors::ProverError;
+use crate::threadpool::utlis::{ProvePaths, RunPaths};
 use crate::utils::{config::Template, job::JobStore};
 use cairo_proof_parser::json_parser::proof_from_annotations;
 use cairo_proof_parser::output::ExtractOutputResult;
@@ -9,11 +9,9 @@ use cairo_proof_parser::{self, ProofJSON};
 use common::models::{JobStatus, ProverResult};
 use serde_json::Value;
 use std::fs;
-use std::path::PathBuf;
-use std::str::FromStr;
+
 use std::sync::Arc;
-use tempfile::{tempdir, TempDir};
-use tokio::process::Command;
+use tempfile::tempdir;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::Mutex;
 use tracing::trace;
@@ -24,9 +22,6 @@ pub async fn prove(
     job_store: JobStore,
     program_input: CairoVersionedInput,
     sse_tx: Arc<Mutex<Sender<String>>>,
-    n_queries: Option<u32>,
-    pow_bits: Option<u32>,
-    bootload: bool,
 ) -> Result<(), ProverError> {
     let dir = tempdir()?;
     job_store
@@ -34,7 +29,7 @@ pub async fn prove(
         .await;
 
     let paths = ProvePaths::new(dir);
-
+    let (n_queries, pow_bits, bootload) = program_input.get_parameters();
     program_input
         .prepare_and_run(&RunPaths::from(&paths), bootload)
         .await?;
@@ -109,52 +104,4 @@ fn prover_result(
         serialized_proof,
     };
     Ok(prover_result)
-}
-
-#[derive(Debug, Clone)]
-pub(super) struct ProvePaths {
-    pub(super) program_input: PathBuf,
-    pub(super) program: PathBuf,
-    pub(super) proof_path: PathBuf,
-    pub(super) trace_file: PathBuf,
-    pub(super) memory_file: PathBuf,
-    pub(super) public_input_file: PathBuf,
-    pub(super) private_input_file: PathBuf,
-    pub(super) params_file: PathBuf,
-    pub(super) config_file: PathBuf,
-    pub(super) pie_output: PathBuf,
-}
-
-impl ProvePaths {
-    pub fn new(base_dir: TempDir) -> Self {
-        let path = base_dir.into_path();
-        Self {
-            program_input: path.join("program_input.json"),
-            program: path.join("program.json"),
-            proof_path: path.join("program_proof_cairo.json"),
-            trace_file: path.join("program_trace.trace"),
-            memory_file: path.join("program_memory.memory"),
-            public_input_file: path.join("program_public_input.json"),
-            private_input_file: path.join("program_private_input.json"),
-            params_file: path.join("cpu_air_params.json"),
-            config_file: PathBuf::from_str("config/cpu_air_prover_config.json").unwrap(),
-            pie_output: path.join("program_pie_output.zip"),
-        }
-    }
-    pub fn prove_command(&self) -> Command {
-        let mut command = Command::new("cpu_air_prover");
-        command
-            .arg("--out_file")
-            .arg(&self.proof_path)
-            .arg("--private_input_file")
-            .arg(&self.private_input_file)
-            .arg("--public_input_file")
-            .arg(&self.public_input_file)
-            .arg("--prover_config_file")
-            .arg(&self.config_file)
-            .arg("--parameter_file")
-            .arg(&self.params_file)
-            .arg("-generate-annotations");
-        command
-    }
 }

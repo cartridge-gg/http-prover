@@ -4,6 +4,7 @@ mod cairo0;
 use std::{fmt::Display, str::FromStr};
 
 pub use cairo::{CairoCompiledProgram, CairoProverInput};
+pub use cairo0::LayoutBridgeInput;
 pub use cairo0::{Cairo0CompiledProgram, Cairo0ProverInput};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};

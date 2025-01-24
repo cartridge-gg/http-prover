@@ -26,9 +26,6 @@ pub async fn root(
     let execution_params = ProveParams {
         common: task_base,
         program_input: CairoVersionedInput::Cairo(program_input.clone()),
-        n_queries: program_input.clone().n_queries,
-        pow_bits: program_input.pow_bits,
-        bootload: program_input.bootload,
     };
     let _ = thread
         .execute(Task::Prove(execution_params))

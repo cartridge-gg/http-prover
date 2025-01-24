@@ -9,9 +9,11 @@ use tokio::{
 };
 use tracing::{error, trace};
 
+pub mod layout_bridge;
 pub mod prove;
 pub mod run;
 pub mod task;
+pub mod utlis;
 
 pub use run::CairoVersionedInput;
 

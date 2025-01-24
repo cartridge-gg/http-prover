@@ -3,6 +3,7 @@ use crate::auth::auth_errors::AuthorizerError;
 use crate::auth::authorizer::{AuthorizationProvider, Authorizer, FileAuthorizer};
 use crate::errors::ProverError;
 use crate::extractors::workdir::TempDirHandle;
+use crate::layout_bridge::root;
 use crate::sse::sse_handler;
 use crate::threadpool::ThreadPool;
 use crate::utils::job::{get_job, JobStore};
@@ -87,6 +88,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         .route("/verify", post(verify_proof))
         .route("/get-job/:id", get(get_job))
         .route("/sse", get(sse_handler))
+        .route("/layout-bridge", post(root))
         .with_state(app_state.clone())
         .nest("/", auth(&app_state))
         .nest("/prove", prove::router(app_state.clone()))

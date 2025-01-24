@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cairo0ProverInput {
-    pub program: Cairo0CompiledProgram,
+    pub program: serde_json::Value,
     pub program_input: serde_json::Value,
     pub layout: Layout,
     pub n_queries: Option<u32>,
@@ -13,6 +13,7 @@ pub struct Cairo0ProverInput {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cairo0CompiledProgram {
+    //TODO: Why this fails to serialize and deserialize layout bridge correctly
     pub attributes: Vec<String>,
     pub builtins: Vec<String>,
     pub compiler_version: String,
@@ -23,4 +24,9 @@ pub struct Cairo0CompiledProgram {
     pub main_scope: String,
     pub prime: String,
     pub reference_manager: serde_json::Value,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LayoutBridgeInput {
+    pub proof: String,
 }

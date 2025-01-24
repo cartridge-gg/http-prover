@@ -1,4 +1,8 @@
-use crate::{errors::ProverError, threadpool::prove::prove, utils::job::JobStore};
+use crate::{
+    errors::ProverError,
+    threadpool::{layout_bridge::layout_bridge, prove::prove},
+    utils::job::JobStore,
+};
 
 use std::sync::Arc;
 
@@ -12,50 +16,39 @@ pub struct TaskCommon {
     pub job_store: JobStore,
     pub sse_tx: Arc<Mutex<Sender<String>>>,
 }
+impl TaskCommon {
+    pub fn as_tuple(&self) -> (&u64, &JobStore, &Arc<Mutex<Sender<String>>>) {
+        (&self.job_id, &self.job_store, &self.sse_tx)
+    }
+}
 
 pub struct ProveParams {
     pub common: TaskCommon,
     pub program_input: CairoVersionedInput,
-    pub n_queries: Option<u32>,
-    pub pow_bits: Option<u32>,
-    pub bootload: bool,
 }
 
 pub struct RunParams {
     pub common: TaskCommon,
     pub program_input: CairoVersionedInput,
-    pub run_option: bool,
 }
 
-pub struct LayoutBridgeParams{
-    pub common:TaskCommon,
+pub struct LayoutBridgeParams {
+    pub common: TaskCommon,
     pub proof: String,
 }
 
 pub enum Task {
     Run(RunParams),
     Prove(ProveParams),
-    LayoutBridge(LayoutBridgeParams)
+    LayoutBridge(LayoutBridgeParams),
 }
 
 impl Task {
     pub fn extract_common(&self) -> (&u64, &JobStore, &Arc<Mutex<Sender<String>>>) {
         match self {
-            Task::Prove(params) => (
-                &params.common.job_id,
-                &params.common.job_store,
-                &params.common.sse_tx,
-            ),
-            Task::Run(params) => (
-                &params.common.job_id,
-                &params.common.job_store,
-                &params.common.sse_tx,
-            ),
-            Task::LayoutBridge(params) => (
-                &params.common.job_id,
-                &params.common.job_store,
-                &params.common.sse_tx
-            )
+            Task::Prove(params) => params.common.as_tuple(),
+            Task::Run(params) => params.common.as_tuple(),
+            Task::LayoutBridge(params) => params.common.as_tuple(),
         }
     }
 
@@ -68,9 +61,6 @@ impl Task {
                     params.common.job_store.clone(),
                     params.program_input.clone(),
                     params.common.sse_tx.clone(),
-                    params.n_queries,
-                    params.pow_bits,
-                    params.bootload,
                 )
                 .await
             }
@@ -81,13 +71,12 @@ impl Task {
                     params.common.job_store.clone(),
                     params.program_input.clone(),
                     params.common.sse_tx.clone(),
-                    params.run_option,
                 )
                 .await
             }
             Task::LayoutBridge(params) => {
-                info!("Executing layout bridge for job {}",params.common.job_id);
-                todo!()
+                info!("Executing layout bridge for job {}", params.common.job_id);
+                layout_bridge(&params.common, &params.proof).await
             }
         }
     }

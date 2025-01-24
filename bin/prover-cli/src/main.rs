@@ -8,6 +8,10 @@ use prove::Prove;
 
 pub mod config;
 use config::ConfigGenerator;
+
+pub mod layout_bridge;
+use layout_bridge::LayoutBridgeRunner;
+
 pub mod common;
 pub mod errors;
 pub mod fetch;
@@ -27,6 +31,8 @@ enum Subcommands {
     Run(CairoRunner),
     #[clap(about = "Generate config based on provided public input")]
     Config(ConfigGenerator),
+    #[clap(about = "Generate prove from layout bridge")]
+    LayoutBridge(LayoutBridgeRunner),
 }
 
 #[tokio::main]
@@ -41,6 +47,9 @@ pub async fn main() {
         }
         Subcommands::Config(config) => {
             config.run();
+        }
+        Subcommands::LayoutBridge(layout_bridge) => {
+            layout_bridge.run().await;
         }
     }
 }

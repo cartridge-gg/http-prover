@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use clap::Parser;
 use common::models::{JobResult, RunResult};
 use prover_sdk::{
-    access_key::ProverAccessKey, sdk::ProverSDK, Cairo0CompiledProgram, Cairo0ProverInput,
-    CairoCompiledProgram, CairoProverInput, Layout,
+    access_key::ProverAccessKey, sdk::ProverSDK, Cairo0ProverInput, CairoCompiledProgram,
+    CairoProverInput, Layout,
 };
 use serde_json::Value;
 use tokio::fs;
@@ -92,7 +92,7 @@ pub async fn cairo_runner(args: CairoRunner, sdk: ProverSDK) -> u64 {
     match args.cairo_version {
         CairoVersion::V0 => {
             let input = std::fs::read_to_string(args.program_input_path).unwrap();
-            let program_serialized: Cairo0CompiledProgram = serde_json::from_str(&program).unwrap();
+            let program_serialized: Value = serde_json::from_str(&program).unwrap();
             let program_input: Value = serde_json::from_str(&input).unwrap();
             let data = Cairo0ProverInput {
                 program: program_serialized,
