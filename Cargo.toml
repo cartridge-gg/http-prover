@@ -4,7 +4,6 @@ members = [
     "prover",
     "common",
     "prover-sdk",
-    "bin/cairo-prove",
     "bin/keygen",
     "bin/register",
     "bin/prover-cli",

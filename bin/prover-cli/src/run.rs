@@ -4,7 +4,7 @@ use clap::Parser;
 use common::models::{JobResult, RunResult};
 use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, Cairo0CompiledProgram, Cairo0ProverInput,
-    CairoCompiledProgram, CairoProverInput, Layout, LayoutBridgeOrBootload,
+    CairoCompiledProgram, CairoProverInput, Layout,
 };
 use serde_json::Value;
 use tokio::fs;
@@ -36,8 +36,8 @@ pub struct CairoRunner {
     pub sse: bool,
     #[arg(long, env)]
     pub proof_dir: PathBuf,
-    #[arg(long, env, default_value = "None")]
-    pub run_option: LayoutBridgeOrBootload,
+    #[arg(long, env, default_value = "false")]
+    pub bootload: bool,
 }
 impl CairoRunner {
     pub async fn run(self) {
@@ -100,7 +100,7 @@ pub async fn cairo_runner(args: CairoRunner, sdk: ProverSDK) -> u64 {
                 program_input,
                 pow_bits: None,
                 n_queries: None,
-                run_option: args.run_option,
+                bootload: args.bootload,
             };
             sdk.run_cairo0(data).await.unwrap()
         }
@@ -114,7 +114,7 @@ pub async fn cairo_runner(args: CairoRunner, sdk: ProverSDK) -> u64 {
                 program_input: input,
                 pow_bits: None,
                 n_queries: None,
-                run_option: args.run_option,
+                bootload: args.bootload,
             };
             sdk.run_cairo(data).await.unwrap()
         }

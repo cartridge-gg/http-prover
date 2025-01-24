@@ -457,25 +457,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-prove"
-version = "0.1.0"
-dependencies = [
- "clap",
- "common",
- "ed25519-dalek",
- "prover-sdk",
- "reqwest 0.11.27",
- "serde",
- "serde_json",
- "starknet-types-core",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "url",
-]
-
-[[package]]
 name = "cc"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

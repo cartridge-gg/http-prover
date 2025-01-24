@@ -53,9 +53,11 @@ COPY --from=prover /usr/bin/cpu_air_verifier /usr/local/bin/cpu_air_verifier
 
 COPY --from=builder /app/config/cpu_air_prover_config.json /config/cpu_air_prover_config.json
 COPY --from=builder /app/scripts/compile_bootloaders.sh /scripts/compile_bootloaders.sh
+COPY --from=builder /app/scripts/compile_layout_bridge.sh /scripts/compile_layout_bridge.sh
 
 RUN scripts/compile_bootloaders.sh
-COPY ./layout_bridge.json /layout_bridge.json
+RUN scripts/compile_layout_bridge.sh
+
 EXPOSE 3000
 
 ENTRYPOINT [ "prover" ]

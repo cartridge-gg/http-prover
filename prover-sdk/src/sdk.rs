@@ -1,6 +1,6 @@
 use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk_builder::ProverSDKBuilder};
 use common::{
-    prover_input::{Cairo0ProverInput, CairoProverInput, LayoutBridgeOrBootload, ProverInput},
+    prover_input::{Cairo0ProverInput, CairoProverInput, ProverInput},
     requests::AddKeyRequest,
 };
 use ed25519_dalek::{ed25519::signature::SignerMut, VerifyingKey};
@@ -46,7 +46,7 @@ impl ProverSDK {
 
     pub async fn prove_cairo0(&self, data: Cairo0ProverInput) -> Result<u64, SdkErrors> {
         if !data.layout.is_bootloadable()
-            && matches!(data.run_option, LayoutBridgeOrBootload::Bootload)
+            && data.bootload
         {
             return Err(SdkErrors::BootloaderError);
         }
@@ -56,12 +56,9 @@ impl ProverSDK {
 
     pub async fn prove_cairo(&self, data: CairoProverInput) -> Result<u64, SdkErrors> {
         if !data.layout.is_bootloadable()
-            && matches!(data.run_option, LayoutBridgeOrBootload::Bootload)
+        && data.bootload
         {
             return Err(SdkErrors::BootloaderError);
-        }
-        if matches!(data.run_option, LayoutBridgeOrBootload::LayoutBridge) {
-            return Err(SdkErrors::LayoutBridgeError);
         }
         self.prove(ProverInput::Cairo(data), self.prover_cairo.clone())
             .await
@@ -86,7 +83,7 @@ impl ProverSDK {
     }
     pub async fn run_cairo0(&self, data: Cairo0ProverInput) -> Result<u64, SdkErrors> {
         if !data.layout.is_bootloadable()
-            && matches!(data.run_option, LayoutBridgeOrBootload::Bootload)
+            && data.bootload
         {
             return Err(SdkErrors::BootloaderError);
         }
@@ -96,12 +93,9 @@ impl ProverSDK {
 
     pub async fn run_cairo(&self, data: CairoProverInput) -> Result<u64, SdkErrors> {
         if !data.layout.is_bootloadable()
-            && matches!(data.run_option, LayoutBridgeOrBootload::Bootload)
+            && data.bootload
         {
             return Err(SdkErrors::BootloaderError);
-        }
-        if matches!(data.run_option, LayoutBridgeOrBootload::LayoutBridge) {
-            return Err(SdkErrors::LayoutBridgeError);
         }
         self.prove(ProverInput::Cairo(data), self.run_cairo.clone())
             .await

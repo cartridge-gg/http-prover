@@ -8,7 +8,7 @@ pub struct Cairo0ProverInput {
     pub layout: Layout,
     pub n_queries: Option<u32>,
     pub pow_bits: Option<u32>,
-    pub run_option: super::LayoutBridgeOrBootload,
+    pub bootload: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

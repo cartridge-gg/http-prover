@@ -4,7 +4,6 @@ use common::models::JobResult;
 use helpers::fetch_job;
 use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, CairoCompiledProgram, CairoProverInput, Layout,
-    LayoutBridgeOrBootload,
 };
 use starknet_types_core::felt::Felt;
 use tokio::fs;
@@ -31,7 +30,7 @@ async fn test_cairo_run() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
-        run_option: LayoutBridgeOrBootload::None,
+        bootload: false,
     };
     let job = sdk.run_cairo(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;

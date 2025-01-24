@@ -5,7 +5,6 @@ use std::sync::Arc;
 use tokio::sync::{broadcast::Sender, Mutex};
 
 use super::{run::run, CairoVersionedInput};
-use common::prover_input::LayoutBridgeOrBootload;
 use tracing::info;
 
 pub struct TaskCommon {
@@ -19,18 +18,24 @@ pub struct ProveParams {
     pub program_input: CairoVersionedInput,
     pub n_queries: Option<u32>,
     pub pow_bits: Option<u32>,
-    pub run_option: LayoutBridgeOrBootload,
+    pub bootload: bool,
 }
 
 pub struct RunParams {
     pub common: TaskCommon,
     pub program_input: CairoVersionedInput,
-    pub run_option: LayoutBridgeOrBootload,
+    pub run_option: bool,
+}
+
+pub struct LayoutBridgeParams{
+    pub common:TaskCommon,
+    pub proof: String,
 }
 
 pub enum Task {
     Run(RunParams),
     Prove(ProveParams),
+    LayoutBridge(LayoutBridgeParams)
 }
 
 impl Task {
@@ -46,6 +51,11 @@ impl Task {
                 &params.common.job_store,
                 &params.common.sse_tx,
             ),
+            Task::LayoutBridge(params) => (
+                &params.common.job_id,
+                &params.common.job_store,
+                &params.common.sse_tx
+            )
         }
     }
 
@@ -60,7 +70,7 @@ impl Task {
                     params.common.sse_tx.clone(),
                     params.n_queries,
                     params.pow_bits,
-                    &params.run_option,
+                    params.bootload,
                 )
                 .await
             }
@@ -71,9 +81,13 @@ impl Task {
                     params.common.job_store.clone(),
                     params.program_input.clone(),
                     params.common.sse_tx.clone(),
-                    &params.run_option,
+                    params.run_option,
                 )
                 .await
+            }
+            Task::LayoutBridge(params) => {
+                info!("Executing layout bridge for job {}",params.common.job_id);
+                todo!()
             }
         }
     }

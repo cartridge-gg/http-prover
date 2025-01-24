@@ -7,7 +7,6 @@ use cairo_proof_parser::output::ExtractOutputResult;
 use cairo_proof_parser::program::{CairoVersion, ExtractProgramResult};
 use cairo_proof_parser::{self, ProofJSON};
 use common::models::{JobStatus, ProverResult};
-use common::prover_input::LayoutBridgeOrBootload;
 use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
@@ -27,7 +26,7 @@ pub async fn prove(
     sse_tx: Arc<Mutex<Sender<String>>>,
     n_queries: Option<u32>,
     pow_bits: Option<u32>,
-    run_option: &LayoutBridgeOrBootload,
+    bootload: bool,
 ) -> Result<(), ProverError> {
     let dir = tempdir()?;
     job_store
@@ -37,7 +36,7 @@ pub async fn prove(
     let paths = ProvePaths::new(dir);
 
     program_input
-        .prepare_and_run(&RunPaths::from(&paths), run_option)
+        .prepare_and_run(&RunPaths::from(&paths), bootload)
         .await?;
 
     Template::generate_from_public_input_file(&paths.public_input_file, n_queries, pow_bits)?
@@ -56,9 +55,8 @@ pub async fn prove(
             CairoVersionedInput::Cairo(_) => CairoVersion::Cairo,
             CairoVersionedInput::Cairo0(_) => CairoVersion::Cairo0,
         };
-        let is_bootload = matches!(run_option.clone(), LayoutBridgeOrBootload::Bootload);
 
-        let prover_result = prover_result(&final_result, cairo_version, is_bootload)?;
+        let prover_result = prover_result(&final_result, cairo_version, bootload)?;
 
         job_store
             .update_job_status(
