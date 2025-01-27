@@ -107,8 +107,7 @@ async fn test_cairo0_prove_bootloader() {
     let access_key = ProverAccessKey::from_hex_string(&private_key).unwrap();
     let url = Url::parse(&url).unwrap();
     let sdk = ProverSDK::new(url, access_key).await.unwrap();
-    let program = std::fs::read_to_string("../examples/cairo0/fibonacci_compiled.json").unwrap();
-    let program: Value = serde_json::from_str(&program).unwrap();
+    let program = std::fs::read("../examples/cairo0/fibonacci_compiled.json").unwrap();
     let program_input_string = std::fs::read_to_string("../examples/cairo0/input.json").unwrap();
     let program_input: Value = serde_json::from_str(&program_input_string).unwrap();
     let data = Cairo0ProverInput {
@@ -149,8 +148,7 @@ async fn test_cairo0_prove() {
     let access_key = ProverAccessKey::from_hex_string(&private_key).unwrap();
     let url = Url::parse(&url).unwrap();
     let sdk = ProverSDK::new(url, access_key).await.unwrap();
-    let program = std::fs::read_to_string("../examples/cairo0/fibonacci_compiled.json").unwrap();
-    let program: Value = serde_json::from_str(&program).unwrap();
+    let program = std::fs::read("../examples/cairo0/fibonacci_compiled.json").unwrap();
     let program_input_string = std::fs::read_to_string("../examples/cairo0/input.json").unwrap();
     let program_input: Value = serde_json::from_str(&program_input_string).unwrap();
     let data = Cairo0ProverInput {

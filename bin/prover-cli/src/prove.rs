@@ -84,14 +84,13 @@ pub fn handle_completed_job_response(result: JobResult) -> ProverResult {
 }
 
 pub async fn prove(args: Prove, sdk: ProverSDK) -> u64 {
-    let program = std::fs::read_to_string(&args.program_path).unwrap();
     match args.cairo_version {
         CairoVersion::V0 => {
+            let program = std::fs::read(&args.program_path).unwrap();
             let input = std::fs::read_to_string(args.program_input_path).unwrap();
-            let program_serialized: Value = serde_json::from_str(&program).unwrap();
             let program_input: Value = serde_json::from_str(&input).unwrap();
             let data = Cairo0ProverInput {
-                program: program_serialized,
+                program,
                 layout: args.layout,
                 program_input,
                 pow_bits: args.pow_bits,
@@ -101,6 +100,7 @@ pub async fn prove(args: Prove, sdk: ProverSDK) -> u64 {
             sdk.prove_cairo0(data).await.unwrap()
         }
         CairoVersion::V1 => {
+            let program = std::fs::read_to_string(&args.program_path).unwrap();
             let input = std::fs::read_to_string(args.program_input_path).unwrap();
             let input = validate_input(&input);
             let program_serialized: CairoCompiledProgram = serde_json::from_str(&program).unwrap();

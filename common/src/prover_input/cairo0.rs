@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cairo0ProverInput {
-    pub program: serde_json::Value,
+    pub program: Vec<u8>,
     pub program_input: serde_json::Value,
     pub layout: Layout,
     pub n_queries: Option<u32>,

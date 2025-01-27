@@ -124,7 +124,7 @@ impl CairoVersionedInput {
                 fs::write(paths.program_input_path, input)?;
             }
             CairoVersionedInput::Cairo0(input) => {
-                fs::write(paths.program, serde_json::to_string(&input.program)?)?;
+                fs::write(paths.program, &input.program)?;
                 fs::write(
                     paths.program_input_path.clone(),
                     serde_json::to_string(&input.program_input)?,
@@ -168,7 +168,7 @@ impl CairoVersionedInput {
                     let pie_file_str = paths.pie_output.to_str().unwrap();
                     let program_input_file_str = paths.program_input_path.to_str().unwrap();
                     create_template(pie_file_str, program_input_file_str)?;
-
+                    trace!("Running cairo-run to generate trace from PIE");
                     let command = paths.cairo0_run_command(&input.layout, true)?;
                     command_run(command).await
                 } else {

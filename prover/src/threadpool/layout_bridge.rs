@@ -10,11 +10,10 @@ const LAYOUT_BRIDGE_PATH: &str = "layout_bridge.json";
 
 pub async fn layout_bridge(common: &TaskCommon, proof: &str) -> Result<(), ProverError> {
     let program = fs::read(LAYOUT_BRIDGE_PATH).await?;
-    let program_serialized: Value = serde_json::from_slice(&program).unwrap();
 
     let program_input: Value = serde_json::from_str(proof).unwrap();
     let input = Cairo0ProverInput {
-        program: program_serialized,
+        program,
         program_input,
         layout: Layout::RecursiveWithPoseidon,
         n_queries: None,
