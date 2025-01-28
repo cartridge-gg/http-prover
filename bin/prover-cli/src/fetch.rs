@@ -1,7 +1,6 @@
 use std::time::Duration;
 
-use common::models::JobResult;
-use prover_sdk::{sdk::ProverSDK, JobResponse};
+use prover_sdk::{sdk::ProverSDK, JobResponse, JobResult};
 use serde_json::Value;
 use tokio::time::sleep;
 use tracing::info;

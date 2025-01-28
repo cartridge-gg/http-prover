@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use common::models::{JobResult, RunResult};
 use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, Cairo0ProverInput, CairoCompiledProgram,
-    CairoProverInput, Layout,
+    CairoProverInput, JobResult, Layout, RunResult,
 };
 use serde_json::Value;
 use tokio::fs;

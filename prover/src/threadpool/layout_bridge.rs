@@ -11,7 +11,7 @@ const LAYOUT_BRIDGE_PATH: &str = "layout_bridge.json";
 pub async fn layout_bridge(common: &TaskCommon, proof: &str) -> Result<(), ProverError> {
     let program = fs::read(LAYOUT_BRIDGE_PATH).await?;
 
-    let program_input: Value = serde_json::from_str(proof).unwrap();
+    let program_input: Value = serde_json::from_str(proof)?;
     let input = Cairo0ProverInput {
         program,
         program_input,

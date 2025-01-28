@@ -93,7 +93,6 @@ pub async fn run(
                 .unwrap();
         }
     } else {
-        result.unwrap();
         job_store
             .update_job_status(job_id, JobStatus::Failed, None)
             .await;

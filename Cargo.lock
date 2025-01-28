@@ -2053,7 +2053,6 @@ name = "prover-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
- "common",
  "ed25519-dalek",
  "prover",
  "prover-sdk",

@@ -2,7 +2,6 @@ use crate::auth::auth;
 use crate::auth::auth_errors::AuthorizerError;
 use crate::auth::authorizer::{AuthorizationProvider, Authorizer, FileAuthorizer};
 use crate::errors::ProverError;
-use crate::extractors::workdir::TempDirHandle;
 use crate::layout_bridge::root;
 use crate::sse::sse_handler;
 use crate::threadpool::ThreadPool;
@@ -12,7 +11,6 @@ use crate::verifier::verify_proof;
 use crate::{prove, run, Args};
 use axum::extract::DefaultBodyLimit;
 use axum::{
-    middleware,
     routing::{get, post},
     serve, Router,
 };
@@ -93,9 +91,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         .nest("/", auth(&app_state))
         .nest("/prove", prove::router(app_state.clone()))
         .nest("/run", run::router(app_state.clone()))
-        .layer(DefaultBodyLimit::max(1024 * 1024 * 1000))
-        .layer(middleware::from_extractor::<TempDirHandle>());
-
+        .layer(DefaultBodyLimit::max(1024 * 1024 * 1000));
     let address: SocketAddr = format!("{}:{}", args.host, args.port)
         .parse()
         .map_err(ProverError::AddressParse)?;

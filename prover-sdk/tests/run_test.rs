@@ -6,7 +6,6 @@ use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, CairoCompiledProgram, CairoProverInput, Layout,
 };
 use starknet_types_core::felt::Felt;
-use tokio::fs;
 use url::Url;
 mod helpers;
 #[tokio::test]
@@ -41,14 +40,30 @@ async fn test_cairo_run() {
             panic!("Expected run result, got prove result");
         }
         JobResult::Run(run_result) => {
-            fs::write("priv.json", run_result.private_input)
-                .await
-                .unwrap();
-            fs::write("pub.json", run_result.public_input)
-                .await
-                .unwrap();
-            fs::write("memory", run_result.memory).await.unwrap();
-            fs::write("trace", run_result.trace).await.unwrap();
+            // Validate private input
+            assert!(
+                !run_result.private_input.is_empty(),
+                "Private input is empty"
+            );
+            assert!(
+                run_result.private_input.len() > 0,
+                "Unexpected private input length"
+            );
+
+            // Validate public input
+            assert!(!run_result.public_input.is_empty(), "Public input is empty");
+            assert!(
+                run_result.public_input.len() > 0,
+                "Unexpected public input length"
+            );
+
+            // Validate memory
+            assert!(!run_result.memory.is_empty(), "Memory is empty");
+            assert!(run_result.memory.len() > 0, "Unexpected memory length");
+
+            // Validate trace
+            assert!(!run_result.trace.is_empty(), "Trace is empty");
+            assert!(run_result.trace.len() > 0, "Unexpected trace length");
         }
     }
 }
