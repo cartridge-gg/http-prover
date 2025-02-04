@@ -31,15 +31,21 @@ pub async fn prove(
     let paths = ProvePaths::new(dir);
     let (n_queries, pow_bits, bootload) = program_input.get_parameters();
     program_input
-        .prepare_and_run(&RunPaths::from(&paths), bootload)
+        .prepare_and_run(&RunPaths::from(&paths), bootload, job_id)
         .await?;
 
     Template::generate_from_public_input_file(&paths.public_input_file, n_queries, pow_bits)?
         .save_to_file(&paths.params_file)?;
 
     trace!("Running prover");
-
+    let start = tokio::time::Instant::now();
     let prove_status = paths.prove_command().spawn()?.wait().await?;
+    let elapsed = start.elapsed();
+    trace!(
+        "Prover finished in {:?} ms for job: {}",
+        elapsed.as_millis(),
+        job_id
+    );
     let result = fs::read_to_string(&paths.proof_path)?;
     let proof: Value = serde_json::from_str(&result)?;
     let final_result = serde_json::to_string_pretty(&proof)?;

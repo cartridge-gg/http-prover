@@ -1,4 +1,8 @@
-use std::{fs, path::PathBuf, sync::Arc};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use common::{
     models::{JobResult, JobStatus, RunResult},
@@ -8,6 +12,7 @@ use tempfile::tempdir;
 use tokio::{
     process::Command,
     sync::{broadcast::Sender, Mutex},
+    time::Instant,
 };
 use tracing::trace;
 
@@ -64,7 +69,7 @@ pub async fn run(
     let paths = ProvePaths::new(dir);
     let (_, _, bootload) = program_input.get_parameters();
     let result = program_input
-        .prepare_and_run(&RunPaths::from(&paths), bootload)
+        .prepare_and_run(&RunPaths::from(&paths), bootload, job_id)
         .await;
     trace!("Trace generated for job {}", job_id);
     let sender = sse_tx.lock().await;
@@ -110,9 +115,10 @@ impl CairoVersionedInput {
         &self,
         paths: &'_ RunPaths<'_>,
         bootload: bool,
+        job_id: u64,
     ) -> Result<(), ProverError> {
         self.prepare(paths)?;
-        self.run_internal(paths, bootload).await
+        self.run_internal(paths, bootload, job_id).await
     }
     fn prepare(&self, paths: &RunPaths<'_>) -> Result<(), ProverError> {
         match self {
@@ -132,51 +138,81 @@ impl CairoVersionedInput {
         }
         Ok(())
     }
-    async fn run_internal(&self, paths: &RunPaths<'_>, bootload: bool) -> Result<(), ProverError> {
+    async fn run_internal(
+        &self,
+        paths: &RunPaths<'_>,
+        bootload: bool,
+        job_id: u64,
+    ) -> Result<(), ProverError> {
         match self {
             CairoVersionedInput::Cairo(input) => {
-                trace!("Running cairo1-run");
+                let layout_str = input.layout.to_string();
                 if bootload {
-                    trace!("Generating PIE");
-
-                    let command = paths.cairo1_pie_command(&input.layout.to_string());
-                    command_run(command).await?;
-
-                    trace!("PIE generated");
-
-                    let pie_file_str = paths.pie_output.to_str().unwrap();
-                    let program_input_file_str = paths.program_input_path.to_str().unwrap();
-                    create_template(pie_file_str, program_input_file_str)?;
-
-                    trace!("Running cairo-run to generate trace from PIE");
-                    let command = paths.cairo0_run_command(&input.layout, true)?;
-                    command_run(command).await
+                    generate_pie(
+                        paths.pie_output,
+                        paths.program_input_path,
+                        paths.cairo1_pie_command(&layout_str),
+                        job_id,
+                    )
+                    .await?;
+                    run_cairo(paths.cairo0_run_command(&input.layout, true)?, job_id).await
                 } else {
-                    trace!("Running cairo-run to generate trace");
-                    let command = paths.cairo1_run_command(&input.layout.to_string());
-                    command_run(command).await
+                    run_cairo(paths.cairo1_run_command(&layout_str), job_id).await
                 }
             }
             CairoVersionedInput::Cairo0(input) => {
+                let layout_str = input.layout.to_string();
                 if bootload {
-                    trace!("Generating PIE");
-                    let command = paths.cairo0_pie_command(&input.layout.to_string());
-                    command_run(command).await?;
-
-                    trace!("PIE generated");
-                    let pie_file_str = paths.pie_output.to_str().unwrap();
-                    let program_input_file_str = paths.program_input_path.to_str().unwrap();
-                    create_template(pie_file_str, program_input_file_str)?;
-                    trace!("Running cairo-run to generate trace from PIE");
-                    let command = paths.cairo0_run_command(&input.layout, true)?;
-                    command_run(command).await
+                    generate_pie(
+                        paths.pie_output,
+                        paths.program_input_path,
+                        paths.cairo0_pie_command(&layout_str),
+                        job_id,
+                    )
+                    .await?;
+                    run_cairo(paths.cairo0_run_command(&input.layout, true)?, job_id).await
                 } else {
-                    let command = paths.cairo0_run_command(&input.layout, false)?;
-                    command_run(command).await
+                    run_cairo(paths.cairo0_run_command(&input.layout, false)?, job_id).await
                 }
             }
         }
     }
+}
+
+async fn generate_pie(
+    pie_output: &Path,
+    program_input_path: &Path,
+    command: Command,
+    job_id: u64,
+) -> Result<(), ProverError> {
+    trace!("Generating PIE for job {}", job_id);
+    let start = Instant::now();
+    command_run(command).await?;
+    trace!(
+        "PIE generated in {:?}ms, for job {}",
+        start.elapsed().as_millis(),
+        job_id
+    );
+    create_template(
+        pie_output.to_str().unwrap(),
+        program_input_path.to_str().unwrap(),
+    )?;
+    Ok(())
+}
+
+async fn run_cairo(command: Command, job_id: u64) -> Result<(), ProverError> {
+    trace!(
+        "Running cairo-run to generate trace from PIE for job {}",
+        job_id
+    );
+    let start = Instant::now();
+    command_run(command).await?;
+    trace!(
+        "Trace generated in {:?}ms, for job {}",
+        start.elapsed().as_millis(),
+        job_id
+    );
+    Ok(())
 }
 
 impl RunPaths<'_> {
