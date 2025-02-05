@@ -46,7 +46,9 @@ impl ProverSDK {
     }
 
     pub async fn prove_cairo0(&self, data: Cairo0ProverInput) -> Result<u64, SdkErrors> {
-        if !data.layout.is_bootloadable() && data.bootload {
+        if !data.layout.is_bootloadable()
+            && matches!(data.run_mode, common::prover_input::RunMode::Bootload)
+        {
             return Err(SdkErrors::BootloaderError);
         }
         self.prove(ProverInput::Cairo0(data), self.prover_cairo0.clone())
@@ -54,7 +56,9 @@ impl ProverSDK {
     }
 
     pub async fn prove_cairo(&self, data: CairoProverInput) -> Result<u64, SdkErrors> {
-        if !data.layout.is_bootloadable() && data.bootload {
+        if !data.layout.is_bootloadable()
+            && matches!(data.run_mode, common::prover_input::RunMode::Bootload)
+        {
             return Err(SdkErrors::BootloaderError);
         }
         self.prove(ProverInput::Cairo(data), self.prover_cairo.clone())
@@ -79,7 +83,9 @@ impl ProverSDK {
         Ok(job.job_id)
     }
     pub async fn run_cairo0(&self, data: Cairo0ProverInput) -> Result<u64, SdkErrors> {
-        if !data.layout.is_bootloadable() && data.bootload {
+        if !data.layout.is_bootloadable()
+            && matches!(data.run_mode, common::prover_input::RunMode::Bootload)
+        {
             return Err(SdkErrors::BootloaderError);
         }
         self.run(ProverInput::Cairo0(data), self.run_cairo0.clone())
@@ -87,7 +93,9 @@ impl ProverSDK {
     }
 
     pub async fn run_cairo(&self, data: CairoProverInput) -> Result<u64, SdkErrors> {
-        if !data.layout.is_bootloadable() && data.bootload {
+        if !data.layout.is_bootloadable()
+            && matches!(data.run_mode, common::prover_input::RunMode::Bootload)
+        {
             return Err(SdkErrors::BootloaderError);
         }
         self.prove(ProverInput::Cairo(data), self.run_cairo.clone())

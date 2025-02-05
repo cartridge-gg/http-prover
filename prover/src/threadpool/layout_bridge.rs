@@ -18,7 +18,7 @@ pub async fn layout_bridge(common: &TaskCommon, proof: &str) -> Result<(), Prove
         layout: Layout::RecursiveWithPoseidon,
         n_queries: None,
         pow_bits: None,
-        bootload: true,
+        run_mode: common::prover_input::RunMode::Bootload,
     };
     let input = CairoVersionedInput::Cairo0(input);
     prove(

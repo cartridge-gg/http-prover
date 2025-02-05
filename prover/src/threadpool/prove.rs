@@ -29,9 +29,14 @@ pub async fn prove(
         .await;
 
     let paths = ProvePaths::new(dir);
-    let (n_queries, pow_bits, bootload) = program_input.get_parameters();
+    let (n_queries, pow_bits, run_mode) = program_input.get_parameters();
+    if matches!(run_mode, common::prover_input::RunMode::Pie) {
+        Err(ProverError::InvalidRunMode(
+            "Pie mode is not supported in proving".to_string(),
+        ))?;
+    }
     program_input
-        .prepare_and_run(&RunPaths::from(&paths), bootload, job_id)
+        .prepare_and_run(&RunPaths::from(&paths), run_mode.clone(), job_id)
         .await?;
 
     Template::generate_from_public_input_file(&paths.public_input_file, n_queries, pow_bits)?
@@ -56,7 +61,7 @@ pub async fn prove(
             CairoVersionedInput::Cairo(_) => CairoVersion::Cairo,
             CairoVersionedInput::Cairo0(_) => CairoVersion::Cairo0,
         };
-
+        let bootload = matches!(run_mode, common::prover_input::RunMode::Bootload);
         let prover_result = prover_result(&final_result, cairo_version, bootload)?;
 
         job_store

@@ -37,6 +37,8 @@ pub enum ProverError {
     SseError(String),
     #[error(transparent)]
     ParserError(#[from] AnyhowError),
+    #[error("{0}")]
+    InvalidRunMode(String),
 }
 impl<T> From<SendError<T>> for ProverError {
     fn from(err: SendError<T>) -> ProverError {
@@ -52,6 +54,7 @@ impl IntoResponse for ProverError {
     fn into_response(self) -> Response {
         let (status, error_message) = match &self {
             ProverError::FileWriteError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            ProverError::InvalidRunMode(e) => (StatusCode::BAD_REQUEST, e.to_string()),
             ProverError::Parse(e) => (StatusCode::BAD_REQUEST, e.to_string()),
             ProverError::InfallibleError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             ProverError::CustomError(e) => (StatusCode::BAD_REQUEST, e.to_string()),

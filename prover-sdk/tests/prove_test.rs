@@ -29,7 +29,7 @@ async fn test_cairo_prove_bootloader() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
-        bootload: true,
+        run_mode: RunMode::Bootload,
     };
     let job = sdk.prove_cairo(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;
@@ -75,7 +75,7 @@ async fn test_cairo_prove() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
-        bootload: false,
+        run_mode: RunMode::Trace,
     };
     let job = sdk.prove_cairo(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;
@@ -116,7 +116,7 @@ async fn test_cairo0_prove_bootloader() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
-        bootload: true,
+        run_mode: RunMode::Bootload,
     };
     let job = sdk.prove_cairo0(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;
@@ -157,7 +157,7 @@ async fn test_cairo0_prove() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
-        bootload: false,
+        run_mode: RunMode::Trace,
     };
     let job = sdk.prove_cairo0(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;
@@ -203,7 +203,7 @@ async fn test_cairo_multi_prove() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
-        bootload: false,
+        run_mode: RunMode::Trace,
     };
     let job1 = sdk.prove_cairo(data.clone()).await.unwrap();
     let job2 = sdk.prove_cairo(data.clone()).await.unwrap();

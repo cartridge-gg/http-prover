@@ -1,4 +1,4 @@
-use super::Layout;
+use super::{Layout, RunMode};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -8,7 +8,7 @@ pub struct Cairo0ProverInput {
     pub layout: Layout,
     pub n_queries: Option<u32>,
     pub pow_bits: Option<u32>,
-    pub bootload: bool,
+    pub run_mode: RunMode,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
+use super::RunMode;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CairoProverInput {
     pub program: CairoCompiledProgram,
@@ -8,7 +10,7 @@ pub struct CairoProverInput {
     pub layout: super::Layout,
     pub n_queries: Option<u32>,
     pub pow_bits: Option<u32>,
-    pub bootload: bool,
+    pub run_mode: RunMode,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
