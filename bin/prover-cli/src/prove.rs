@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, Cairo0ProverInput, CairoCompiledProgram,
-    CairoProverInput, JobResult, Layout, ProverResult,
+    CairoProverInput, JobResult, Layout, ProverResult, RunMode,
 };
 use serde_json::Value;
 use url::Url;
@@ -39,15 +39,15 @@ pub struct Prove {
     pub n_queries: Option<u32>,
     #[arg(long, env)]
     pub pow_bits: Option<u32>,
-    #[arg(long, env, default_value = "false")]
-    pub bootload: bool,
+    #[arg(long, env, default_value = "trace")]
+    pub run_mode: RunMode,
     #[arg(long, env, default_value = "false")]
     pub full_output: bool,
 }
 impl Prove {
     pub async fn run(self) {
         let access_key = ProverAccessKey::from_hex_string(&self.prover_access_key.clone()).unwrap();
-        if self.bootload {
+        if matches!(self.run_mode, RunMode::Bootload) {
             assert!(self.layout.is_bootloadable(),"Invalid layout for bootloading, supported layouts for bootloader: recursive, recursive_with_poseidon, starknet, starknet_with_keccak")
         }
         let sdk = ProverSDK::new(self.prover_url.clone(), access_key)
@@ -94,7 +94,7 @@ pub async fn prove(args: Prove, sdk: ProverSDK) -> u64 {
                 program_input,
                 pow_bits: args.pow_bits,
                 n_queries: args.n_queries,
-                bootload: args.bootload,
+                run_mode: args.run_mode,
             };
             sdk.prove_cairo0(data).await.unwrap()
         }
@@ -109,7 +109,7 @@ pub async fn prove(args: Prove, sdk: ProverSDK) -> u64 {
                 program_input: input,
                 pow_bits: args.pow_bits,
                 n_queries: args.n_queries,
-                bootload: args.bootload,
+                run_mode: args.run_mode,
             };
             sdk.prove_cairo(data).await.unwrap()
         }

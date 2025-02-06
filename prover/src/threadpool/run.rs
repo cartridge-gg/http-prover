@@ -5,8 +5,8 @@ use std::{
 };
 
 use common::{
-    models::{JobResult, JobStatus, RunResult},
-    prover_input::{Cairo0ProverInput, CairoProverInput, Layout},
+    models::{JobResult, JobStatus, RunResult, TraceFiles},
+    prover_input::{Cairo0ProverInput, CairoProverInput, Layout, RunMode},
 };
 use tempfile::tempdir;
 use tokio::{
@@ -30,10 +30,14 @@ pub enum CairoVersionedInput {
     Cairo0(Cairo0ProverInput),
 }
 impl CairoVersionedInput {
-    pub fn get_parameters(&self) -> (Option<u32>, Option<u32>, bool) {
+    pub fn get_parameters(&self) -> (Option<u32>, Option<u32>, RunMode) {
         match self {
-            CairoVersionedInput::Cairo(input) => (input.n_queries, input.pow_bits, input.bootload),
-            CairoVersionedInput::Cairo0(input) => (input.n_queries, input.pow_bits, input.bootload),
+            CairoVersionedInput::Cairo(input) => {
+                (input.n_queries, input.pow_bits, input.run_mode.clone())
+            }
+            CairoVersionedInput::Cairo0(input) => {
+                (input.n_queries, input.pow_bits, input.run_mode.clone())
+            }
         }
     }
 }
@@ -67,23 +71,27 @@ pub async fn run(
         .await;
 
     let paths = ProvePaths::new(dir);
-    let (_, _, bootload) = program_input.get_parameters();
+    let (_, _, run_mode) = program_input.get_parameters();
     let result = program_input
-        .prepare_and_run(&RunPaths::from(&paths), bootload, job_id)
+        .prepare_and_run(&RunPaths::from(&paths), run_mode.clone(), job_id)
         .await;
     trace!("Trace generated for job {}", job_id);
     let sender = sse_tx.lock().await;
     if result.is_ok() {
-        let memory = fs::read(&paths.memory_file)?;
-        let trace = fs::read(&paths.trace_file)?;
-        let public_input = fs::read_to_string(paths.public_input_file)?;
-        let private_input = fs::read_to_string(paths.private_input_file)?;
-        let runner_result = RunResult {
-            memory,
-            trace,
-            public_input,
-            private_input,
-            pie: None,
+        let runner_result = match run_mode {
+            RunMode::Bootload | RunMode::Trace => {
+                let memory = fs::read(&paths.memory_file)?;
+                let trace = fs::read(&paths.trace_file)?;
+                let public_input = fs::read_to_string(paths.public_input_file)?;
+                let private_input = fs::read_to_string(paths.private_input_file)?;
+                RunResult::Trace(TraceFiles {
+                    memory,
+                    trace,
+                    public_input,
+                    private_input,
+                })
+            }
+            RunMode::Pie => RunResult::Pie(fs::read(&paths.pie_output)?),
         };
         job_store
             .update_job_status(
@@ -114,11 +122,11 @@ impl CairoVersionedInput {
     pub async fn prepare_and_run(
         &self,
         paths: &'_ RunPaths<'_>,
-        bootload: bool,
+        run_mode: RunMode,
         job_id: u64,
     ) -> Result<(), ProverError> {
         self.prepare(paths)?;
-        self.run_internal(paths, bootload, job_id).await
+        self.run_internal(paths, run_mode, job_id).await
     }
     fn prepare(&self, paths: &RunPaths<'_>) -> Result<(), ProverError> {
         match self {
@@ -141,38 +149,62 @@ impl CairoVersionedInput {
     async fn run_internal(
         &self,
         paths: &RunPaths<'_>,
-        bootload: bool,
+        run_mode: RunMode,
         job_id: u64,
     ) -> Result<(), ProverError> {
         match self {
             CairoVersionedInput::Cairo(input) => {
                 let layout_str = input.layout.to_string();
-                if bootload {
-                    generate_pie(
-                        paths.pie_output,
-                        paths.program_input_path,
-                        paths.cairo1_pie_command(&layout_str),
-                        job_id,
-                    )
-                    .await?;
-                    run_cairo(paths.cairo0_run_command(&input.layout, true)?, job_id).await
-                } else {
-                    run_cairo(paths.cairo1_run_command(&layout_str), job_id).await
+                match run_mode {
+                    RunMode::Bootload => {
+                        generate_pie(
+                            paths.pie_output,
+                            paths.program_input_path,
+                            paths.cairo1_pie_command(&layout_str),
+                            job_id,
+                        )
+                        .await?;
+                        run_cairo(paths.cairo0_run_command(&input.layout, true)?, job_id).await
+                    }
+                    RunMode::Pie => {
+                        generate_pie(
+                            paths.pie_output,
+                            paths.program_input_path,
+                            paths.cairo1_pie_command(&layout_str),
+                            job_id,
+                        )
+                        .await
+                    }
+                    RunMode::Trace => {
+                        run_cairo(paths.cairo1_run_command(&layout_str), job_id).await
+                    }
                 }
             }
             CairoVersionedInput::Cairo0(input) => {
                 let layout_str = input.layout.to_string();
-                if bootload {
-                    generate_pie(
-                        paths.pie_output,
-                        paths.program_input_path,
-                        paths.cairo0_pie_command(&layout_str),
-                        job_id,
-                    )
-                    .await?;
-                    run_cairo(paths.cairo0_run_command(&input.layout, true)?, job_id).await
-                } else {
-                    run_cairo(paths.cairo0_run_command(&input.layout, false)?, job_id).await
+                match run_mode {
+                    RunMode::Bootload => {
+                        generate_pie(
+                            paths.pie_output,
+                            paths.program_input_path,
+                            paths.cairo0_pie_command(&layout_str),
+                            job_id,
+                        )
+                        .await?;
+                        run_cairo(paths.cairo0_run_command(&input.layout, true)?, job_id).await
+                    }
+                    RunMode::Pie => {
+                        generate_pie(
+                            paths.pie_output,
+                            paths.program_input_path,
+                            paths.cairo0_pie_command(&layout_str),
+                            job_id,
+                        )
+                        .await
+                    }
+                    RunMode::Trace => {
+                        run_cairo(paths.cairo0_run_command(&input.layout, false)?, job_id).await
+                    }
                 }
             }
         }

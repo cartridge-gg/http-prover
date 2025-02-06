@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, Cairo0ProverInput, CairoCompiledProgram,
-    CairoProverInput, JobResult, Layout, RunResult,
+    CairoProverInput, JobResult, Layout, RunMode, RunResult,
 };
 use serde_json::Value;
 use tokio::fs;
@@ -35,8 +35,8 @@ pub struct CairoRunner {
     pub sse: bool,
     #[arg(long, env)]
     pub proof_dir: PathBuf,
-    #[arg(long, env, default_value = "false")]
-    pub bootload: bool,
+    #[arg(long, env, default_value = "trace")]
+    pub run_mode: RunMode,
 }
 impl CairoRunner {
     pub async fn run(self) {
@@ -55,33 +55,44 @@ impl CairoRunner {
             if !(self.proof_dir).exists() {
                 fs::create_dir(&self.proof_dir).await.unwrap();
             }
-            let path: std::path::PathBuf = self.proof_dir;
+            match result {
+                RunResult::Pie(pie) => {
+                    fs::write("pie.zip", pie).await.unwrap();
+                }
+                RunResult::Trace(trace_files) => {
+                    let path: std::path::PathBuf = self.proof_dir;
 
-            let trace_path = path.join("trace");
-            let memory_path = path.join("memory");
-            fs::write(trace_path.clone(), result.trace).await.unwrap();
-            fs::write(memory_path.clone(), result.memory).await.unwrap();
+                    let trace_path = path.join("trace");
+                    let memory_path = path.join("memory");
+                    fs::write(trace_path.clone(), trace_files.trace)
+                        .await
+                        .unwrap();
+                    fs::write(memory_path.clone(), trace_files.memory)
+                        .await
+                        .unwrap();
 
-            let canonical_trace_path = fs::canonicalize(&trace_path).await.unwrap();
-            let canonical_memory_path = fs::canonicalize(&memory_path).await.unwrap();
+                    let canonical_trace_path = fs::canonicalize(&trace_path).await.unwrap();
+                    let canonical_memory_path = fs::canonicalize(&memory_path).await.unwrap();
 
-            let public_inputs_path = path.join("public_inputs");
-            let private_inputs_path = path.join("private_inputs");
+                    let public_inputs_path = path.join("public_inputs");
+                    let private_inputs_path = path.join("private_inputs");
 
-            fs::write(public_inputs_path, result.public_input)
-                .await
-                .unwrap();
-            fs::write(private_inputs_path, result.private_input)
-                .await
-                .unwrap();
+                    fs::write(public_inputs_path, trace_files.public_input)
+                        .await
+                        .unwrap();
+                    fs::write(private_inputs_path, trace_files.private_input)
+                        .await
+                        .unwrap();
 
-            println!(
-                "Proof files are saved, change the paths in private input for those:
-            trace: {}
-            memory: {}",
-                canonical_trace_path.to_str().unwrap(),
-                canonical_memory_path.to_str().unwrap()
-            );
+                    println!(
+                        "Proof files are saved, change the paths in private input for those:
+                    trace: {}
+                    memory: {}",
+                        canonical_trace_path.to_str().unwrap(),
+                        canonical_memory_path.to_str().unwrap()
+                    );
+                }
+            }
         }
     }
 }
@@ -98,7 +109,7 @@ pub async fn cairo_runner(args: CairoRunner, sdk: ProverSDK) -> u64 {
                 program_input,
                 pow_bits: None,
                 n_queries: None,
-                bootload: args.bootload,
+                run_mode: args.run_mode,
             };
             sdk.run_cairo0(data).await.unwrap()
         }
@@ -113,7 +124,7 @@ pub async fn cairo_runner(args: CairoRunner, sdk: ProverSDK) -> u64 {
                 program_input: input,
                 pow_bits: None,
                 n_queries: None,
-                bootload: args.bootload,
+                run_mode: args.run_mode,
             };
             sdk.run_cairo(data).await.unwrap()
         }

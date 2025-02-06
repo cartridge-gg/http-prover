@@ -29,12 +29,18 @@ pub struct ProverResult {
     pub program_output_hash: Felt,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RunResult {
+pub struct TraceFiles {
     pub private_input: String,
     pub public_input: String,
     pub memory: Vec<u8>,
     pub trace: Vec<u8>,
-    pub pie: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RunResult {
+    Pie(Vec<u8>),
+    Trace(TraceFiles),
 }
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]

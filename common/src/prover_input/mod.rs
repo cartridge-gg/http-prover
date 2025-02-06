@@ -15,10 +15,10 @@ pub enum ProverInput {
     Cairo(CairoProverInput),
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ValueEnum)]
-pub enum LayoutBridgeOrBootload {
+pub enum RunMode {
     Bootload,
-    LayoutBridge,
-    None,
+    Pie,
+    Trace,
 }
 
 impl ProverInput {
