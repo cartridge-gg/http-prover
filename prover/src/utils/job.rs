@@ -4,7 +4,8 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use common::models::{JobResponse, JobStatus};
+use common::models::{JobStatus, ProverResult};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     sync::Arc,
@@ -22,6 +23,22 @@ pub struct Job {
     pub created: Instant,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum JobResponse {
+    InProgress {
+        id: u64,
+        status: JobStatus,
+    },
+    Completed {
+        result: ProverResult,
+        status: JobStatus,
+    },
+    Failed {
+        error: String,
+    },
+}
+
 #[derive(Default, Clone)]
 pub struct JobStore {
     inner: Arc<Mutex<JobStoreInner>>,
@@ -35,7 +52,7 @@ impl JobStore {
         self.inner
             .lock()
             .await
-            .update_job_status(job_id, status, result);
+            .update_job_status(job_id, status, result)
     }
     pub async fn get_job(&self, id: u64) -> Option<Job> {
         self.inner.lock().await.get_job(id)
@@ -116,7 +133,7 @@ pub async fn get_job(
                         .unwrap_or_else(|| "Unknown error".to_string()),
                 }),
             ),
-            JobStatus::Unknown => (
+            _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(JobResponse::Failed {
                     error: "Unknown error".to_string(),

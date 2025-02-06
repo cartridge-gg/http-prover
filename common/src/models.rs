@@ -28,20 +28,6 @@ pub struct ProverResult {
     pub program_output: Vec<Felt>,
     pub program_output_hash: Felt,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RunResult {
-    pub private_input: String,
-    pub public_input: String,
-    pub memory: Vec<u8>,
-    pub trace: Vec<u8>,
-    pub pie: Option<String>,
-}
-#[derive(Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum JobResult {
-    Prove(ProverResult),
-    Run(RunResult),
-}
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum JobResponse {
@@ -50,7 +36,7 @@ pub enum JobResponse {
         status: JobStatus,
     },
     Completed {
-        result: JobResult,
+        result: ProverResult,
         status: JobStatus,
     },
     Failed {

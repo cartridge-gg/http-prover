@@ -1,6 +1,6 @@
 use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk_builder::ProverSDKBuilder};
 use common::{
-    prover_input::{Cairo0ProverInput, CairoProverInput, LayoutBridgeInput, ProverInput},
+    prover_input::{Cairo0ProverInput, CairoProverInput, ProverInput},
     requests::AddKeyRequest,
 };
 use ed25519_dalek::{ed25519::signature::SignerMut, VerifyingKey};
@@ -14,9 +14,6 @@ pub struct ProverSDK {
     pub client: Client,
     pub prover_cairo0: Url,
     pub prover_cairo: Url,
-    pub run_cairo0: Url,
-    pub run_cairo: Url,
-    pub layout_bridge: Url,
     pub verify: Url,
     pub get_job: Url,
     pub register: Url,
@@ -78,55 +75,6 @@ impl ProverSDK {
         let job = serde_json::from_str::<JobId>(&response_data)?;
         Ok(job.job_id)
     }
-    pub async fn run_cairo0(&self, data: Cairo0ProverInput) -> Result<u64, SdkErrors> {
-        if !data.layout.is_bootloadable() && data.bootload {
-            return Err(SdkErrors::BootloaderError);
-        }
-        self.run(ProverInput::Cairo0(data), self.run_cairo0.clone())
-            .await
-    }
-
-    pub async fn run_cairo(&self, data: CairoProverInput) -> Result<u64, SdkErrors> {
-        if !data.layout.is_bootloadable() && data.bootload {
-            return Err(SdkErrors::BootloaderError);
-        }
-        self.prove(ProverInput::Cairo(data), self.run_cairo.clone())
-            .await
-    }
-
-    async fn run(&self, data: ProverInput, url: Url) -> Result<u64, SdkErrors> {
-        let response = self
-            .client
-            .post(url.clone())
-            .json(&data.to_json_value())
-            .send()
-            .await?;
-
-        if !response.status().is_success() {
-            let response_data: String = response.text().await?;
-            tracing::error!("{}", response_data);
-            return Err(SdkErrors::ProveResponseError(response_data));
-        }
-        let response_data = response.text().await?;
-        let job = serde_json::from_str::<JobId>(&response_data)?;
-        Ok(job.job_id)
-    }
-    pub async fn layout_bridge(&self, data: LayoutBridgeInput) -> Result<u64, SdkErrors> {
-        let response = self
-            .client
-            .post(self.layout_bridge.clone())
-            .json(&serde_json::to_value(&data).unwrap())
-            .send()
-            .await?;
-        if !response.status().is_success() {
-            let response_data: String = response.text().await?;
-            tracing::error!("{}", response_data);
-            return Err(SdkErrors::ProveResponseError(response_data));
-        }
-        let response_data = response.text().await?;
-        let job = serde_json::from_str::<JobId>(&response_data)?;
-        Ok(job.job_id)
-    }
     pub async fn verify(self, proof: String) -> Result<String, SdkErrors> {
         let response = self
             .client
@@ -140,6 +88,7 @@ impl ProverSDK {
     pub async fn get_job(&self, job_id: u64) -> Result<Response, SdkErrors> {
         let url = format!("{}/{}", self.get_job.clone().as_str(), job_id);
         let response = self.client.get(url).send().await?;
+
         if !response.status().is_success() {
             let response_data: String = response.text().await?;
             tracing::error!("{}", response_data);

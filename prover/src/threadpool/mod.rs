@@ -1,25 +1,55 @@
-use crate::errors::ProverError;
+use crate::{errors::ProverError, threadpool::prove::prove, utils::job::JobStore};
 
 use std::sync::Arc;
-use task::Task;
+use tempfile::TempDir;
 use tokio::{
     spawn,
-    sync::{mpsc, Mutex},
+    sync::{broadcast::Sender, mpsc, Mutex},
     task::JoinHandle,
 };
 use tracing::{error, trace};
 
-pub mod layout_bridge;
 pub mod prove;
 pub mod run;
-pub mod task;
-pub mod utlis;
 
 pub use run::CairoVersionedInput;
 
-type ReceiverType = Arc<Mutex<mpsc::Receiver<Task>>>;
-type SenderType = Option<mpsc::Sender<Task>>;
-
+type ReceiverType = Arc<
+    Mutex<
+        mpsc::Receiver<(
+            u64,
+            JobStore,
+            TempDir,
+            CairoVersionedInput,
+            Arc<Mutex<Sender<String>>>,
+            Option<u32>,
+            Option<u32>,
+            bool,
+        )>,
+    >,
+>;
+type SenderType = Option<
+    mpsc::Sender<(
+        u64,
+        JobStore,
+        TempDir,
+        CairoVersionedInput,
+        Arc<Mutex<Sender<String>>>,
+        Option<u32>,
+        Option<u32>,
+        bool,
+    )>,
+>;
+pub struct ExecuteParams {
+    pub job_id: u64,
+    pub job_store: JobStore,
+    pub dir: TempDir,
+    pub program_input: CairoVersionedInput,
+    pub sse_tx: Arc<Mutex<Sender<String>>>,
+    pub n_queries: Option<u32>,
+    pub pow_bits: Option<u32>,
+    pub bootload: bool,
+}
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: SenderType,
@@ -45,13 +75,22 @@ impl ThreadPool {
         }
     }
 
-    pub async fn execute(&self, task: Task) -> Result<(), ProverError> {
+    pub async fn execute(&self, params: ExecuteParams) -> Result<(), ProverError> {
         self.sender
             .as_ref()
             .ok_or(ProverError::CustomError(
                 "Thread pool is shutdown".to_string(),
             ))?
-            .send(task)
+            .send((
+                params.job_id,
+                params.job_store,
+                params.dir,
+                params.program_input,
+                params.sse_tx,
+                params.n_queries,
+                params.pow_bits,
+                params.bootload,
+            ))
             .await?;
         Ok(())
     }
@@ -86,35 +125,52 @@ impl Worker {
             loop {
                 let message = receiver.lock().await.recv().await;
                 match message {
-                    Some(task) => {
+                    Some((
+                        job_id,
+                        job_store,
+                        dir,
+                        program_input,
+                        sse_tx,
+                        n_queries,
+                        pow_bits,
+                        bootload,
+                    )) => {
                         trace!("Worker {id} got a job; executing.");
 
-                        let (job_id, job_store, sse_tx) = task.extract_common();
-
-                        let job_result = task.execute().await;
-                        if let Err(e) = job_result {
+                        if let Err(e) = prove(
+                            job_id,
+                            job_store.clone(),
+                            dir,
+                            program_input,
+                            sse_tx.clone(),
+                            n_queries,
+                            pow_bits,
+                            bootload,
+                        )
+                        .await
+                        {
                             job_store
                                 .update_job_status(
-                                    *job_id,
+                                    job_id,
                                     common::models::JobStatus::Failed,
                                     Some(e.to_string()),
                                 )
                                 .await;
-
                             let sender = sse_tx.clone();
                             let sender = sender.lock().await;
                             if sender.receiver_count() > 0 {
-                                let _ = sender.send(
-                                    serde_json::to_string(&(
-                                        common::models::JobStatus::Failed,
-                                        job_id,
-                                    ))
-                                    .unwrap(),
-                                );
+                                sender
+                                    .send(
+                                        serde_json::to_string(&(
+                                            common::models::JobStatus::Failed,
+                                            job_id,
+                                        ))
+                                        .unwrap(),
+                                    )
+                                    .unwrap();
                             }
-                            error!("Worker {id} encountered an error in job {job_id}: {:?}", e);
+                            error!("Worker {id} encountered an error: {:?}", e);
                         }
-
                         trace!("Worker {id} finished the job.");
                     }
                     None => {

@@ -1,9 +1,7 @@
 use crate::auth::jwt::Claims;
+use crate::extractors::workdir::TempDirHandle;
 use crate::server::AppState;
-use crate::threadpool::{
-    task::{ProveParams, Task, TaskCommon},
-    CairoVersionedInput,
-};
+use crate::threadpool::{CairoVersionedInput, ExecuteParams};
 use axum::Json;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use common::prover_input::CairoProverInput;
@@ -11,6 +9,7 @@ use serde_json::json;
 
 pub async fn root(
     State(app_state): State<AppState>,
+    TempDirHandle(dir): TempDirHandle,
     _claims: Claims,
     Json(program_input): Json<CairoProverInput>,
 ) -> impl IntoResponse {
@@ -18,19 +17,17 @@ pub async fn root(
     let job_store = app_state.job_store.clone();
     let job_id = job_store.create_job().await;
     let thread = thread_pool.lock().await;
-    let task_base = TaskCommon {
+    let execution_params = ExecuteParams {
         job_id,
         job_store,
-        sse_tx: app_state.sse_tx.clone(),
-    };
-    let execution_params = ProveParams {
-        common: task_base,
+        dir,
         program_input: CairoVersionedInput::Cairo(program_input.clone()),
+        sse_tx: app_state.sse_tx.clone(),
+        n_queries: program_input.clone().n_queries,
+        pow_bits: program_input.pow_bits,
+        bootload: program_input.bootload,
     };
-    let _ = thread
-        .execute(Task::Prove(execution_params))
-        .await
-        .into_response();
+    let _ = thread.execute(execution_params).await.into_response();
 
     let body = json!({
         "job_id": job_id

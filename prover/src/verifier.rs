@@ -1,17 +1,13 @@
-use crate::auth::jwt::Claims;
+use crate::{auth::jwt::Claims, extractors::workdir::TempDirHandle};
 use axum::Json;
-use tempfile::tempdir;
 
 use std::process::Command;
 
-pub async fn verify_proof(_claims: Claims, Json(proof): Json<String>) -> Json<bool> {
-    let dir = if let Ok(dir) = tempdir() {
-        dir
-    } else {
-        eprintln!("Failed to create tempdir");
-        return Json(false);
-    };
-
+pub async fn verify_proof(
+    TempDirHandle(dir): TempDirHandle,
+    _claims: Claims,
+    Json(proof): Json<String>,
+) -> Json<bool> {
     // Define the path for the proof file
     let file = dir.into_path().join("proof");
 

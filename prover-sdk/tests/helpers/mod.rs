@@ -1,7 +1,7 @@
-use common::models::{JobResponse, JobResult};
-use prover_sdk::{sdk::ProverSDK, ProverResult};
+use common::models::{JobResponse, ProverResult};
+use prover_sdk::sdk::ProverSDK;
 
-pub async fn fetch_job(sdk: ProverSDK, job: u64) -> Option<JobResult> {
+pub async fn fetch_job(sdk: ProverSDK, job: u64) -> Option<ProverResult> {
     println!("Job ID: {}", job);
     sdk.sse(job).await.unwrap();
     let response = sdk.get_job(job).await.unwrap();
@@ -12,16 +12,4 @@ pub async fn fetch_job(sdk: ProverSDK, job: u64) -> Option<JobResult> {
         return Some(result);
     }
     None
-}
-
-pub fn handle_completed_job_response(result: JobResult) -> ProverResult {
-    match result {
-        JobResult::Prove(prove_result) => prove_result,
-        JobResult::Run(run_result) => {
-            panic!(
-                "Expected a prove result, but got a run result: {:?}",
-                run_result
-            );
-        }
-    }
 }

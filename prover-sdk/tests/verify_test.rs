@@ -1,5 +1,5 @@
 use common::prover_input::*;
-use helpers::{fetch_job, handle_completed_job_response};
+use helpers::fetch_job;
 use prover_sdk::{access_key::ProverAccessKey, sdk::ProverSDK};
 use starknet_types_core::felt::Felt;
 use url::Url;
@@ -45,8 +45,6 @@ async fn test_verify_valid_proof() {
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
-    let result = handle_completed_job_response(result);
-
     let result = sdk.clone().verify(result.proof).await;
     assert!(result.is_ok(), "Failed to verify proof");
     assert_eq!("true", result.unwrap());

@@ -38,6 +38,4 @@ pub enum SdkErrors {
         "Invalid layout for bootload, small and dex layouts are not supported with bootload option"
     )]
     BootloaderError,
-    #[error("Invalid Option for prove/run, cairo1 does not support layout bridge option")]
-    LayoutBridgeError,
 }

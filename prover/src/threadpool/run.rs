@@ -1,41 +1,16 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{fs, path::PathBuf};
 
-use common::{
-    models::{JobResult, JobStatus, RunResult},
-    prover_input::{Cairo0ProverInput, CairoProverInput, Layout},
-};
-use tempfile::tempdir;
-use tokio::{
-    process::Command,
-    sync::{broadcast::Sender, Mutex},
-    time::Instant,
-};
+use common::prover_input::{Cairo0ProverInput, CairoProverInput, Layout};
+use starknet_types_core::felt::Felt;
+use tokio::process::Command;
 use tracing::trace;
 
-use crate::{
-    errors::ProverError,
-    threadpool::utlis::{command_run, create_template, ProvePaths},
-    utils::job::JobStore,
-};
+use crate::errors::ProverError;
 
-use super::utlis::{prepare_input, RunPaths};
-
-#[derive(Clone)]
+use super::prove::ProvePaths;
 pub enum CairoVersionedInput {
     Cairo(CairoProverInput),
     Cairo0(Cairo0ProverInput),
-}
-impl CairoVersionedInput {
-    pub fn get_parameters(&self) -> (Option<u32>, Option<u32>, bool) {
-        match self {
-            CairoVersionedInput::Cairo(input) => (input.n_queries, input.pow_bits, input.bootload),
-            CairoVersionedInput::Cairo0(input) => (input.n_queries, input.pow_bits, input.bootload),
-        }
-    }
 }
 pub trait BootloaderPath {
     fn path(&self) -> Result<PathBuf, ProverError>;
@@ -54,71 +29,14 @@ impl BootloaderPath for Layout {
         }
     }
 }
-
-pub async fn run(
-    job_id: u64,
-    job_store: JobStore,
-    program_input: CairoVersionedInput,
-    sse_tx: Arc<Mutex<Sender<String>>>,
-) -> Result<(), ProverError> {
-    let dir = tempdir()?;
-    job_store
-        .update_job_status(job_id, JobStatus::Running, None)
-        .await;
-
-    let paths = ProvePaths::new(dir);
-    let (_, _, bootload) = program_input.get_parameters();
-    let result = program_input
-        .prepare_and_run(&RunPaths::from(&paths), bootload, job_id)
-        .await;
-    trace!("Trace generated for job {}", job_id);
-    let sender = sse_tx.lock().await;
-    if result.is_ok() {
-        let memory = fs::read(&paths.memory_file)?;
-        let trace = fs::read(&paths.trace_file)?;
-        let public_input = fs::read_to_string(paths.public_input_file)?;
-        let private_input = fs::read_to_string(paths.private_input_file)?;
-        let runner_result = RunResult {
-            memory,
-            trace,
-            public_input,
-            private_input,
-            pie: None,
-        };
-        job_store
-            .update_job_status(
-                job_id,
-                JobStatus::Completed,
-                serde_json::to_string(&JobResult::Run(runner_result)).ok(),
-            )
-            .await;
-        if sender.receiver_count() > 0 {
-            sender
-                .send(serde_json::to_string(&(JobStatus::Completed, job_id))?)
-                .unwrap();
-        }
-    } else {
-        job_store
-            .update_job_status(job_id, JobStatus::Failed, None)
-            .await;
-        if sender.receiver_count() > 0 {
-            sender
-                .send(serde_json::to_string(&(JobStatus::Failed, job_id))?)
-                .unwrap();
-        }
-    }
-    Ok(())
-}
-
 impl CairoVersionedInput {
     pub async fn prepare_and_run(
         &self,
         paths: &'_ RunPaths<'_>,
-        bootload: bool,
-        job_id: u64,
+        bootloader: bool,
     ) -> Result<(), ProverError> {
         self.prepare(paths)?;
-        self.run_internal(paths, bootload, job_id).await
+        self.run(paths, bootloader).await
     }
     fn prepare(&self, paths: &RunPaths<'_>) -> Result<(), ProverError> {
         match self {
@@ -129,90 +47,59 @@ impl CairoVersionedInput {
                 fs::write(paths.program_input_path, input)?;
             }
             CairoVersionedInput::Cairo0(input) => {
-                fs::write(paths.program, &input.program)?;
                 fs::write(
                     paths.program_input_path.clone(),
                     serde_json::to_string(&input.program_input)?,
                 )?;
+                fs::write(paths.program, serde_json::to_string(&input.program)?)?;
             }
         }
         Ok(())
     }
-    async fn run_internal(
-        &self,
-        paths: &RunPaths<'_>,
-        bootload: bool,
-        job_id: u64,
-    ) -> Result<(), ProverError> {
+    async fn run(&self, paths: &RunPaths<'_>, bootloader: bool) -> Result<(), ProverError> {
         match self {
             CairoVersionedInput::Cairo(input) => {
-                let layout_str = input.layout.to_string();
-                if bootload {
-                    generate_pie(
-                        paths.pie_output,
-                        paths.program_input_path,
-                        paths.cairo1_pie_command(&layout_str),
-                        job_id,
-                    )
-                    .await?;
-                    run_cairo(paths.cairo0_run_command(&input.layout, true)?, job_id).await
+                trace!("Running cairo1-run");
+                if bootloader {
+                    let command = paths.cairo1_pie_command(&input.layout.to_string());
+                    command_run(command).await?;
+                    let pie_file_str = paths.pie_output.to_str().unwrap();
+                    let program_input_file_str = paths.program_input_path.to_str().unwrap();
+                    create_template(pie_file_str, program_input_file_str)?;
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
+                    command_run(command).await
                 } else {
-                    run_cairo(paths.cairo1_run_command(&layout_str), job_id).await
+                    let command = paths.cairo1_run_command(&input.layout.to_string());
+                    command_run(command).await
                 }
             }
             CairoVersionedInput::Cairo0(input) => {
-                let layout_str = input.layout.to_string();
-                if bootload {
-                    generate_pie(
-                        paths.pie_output,
-                        paths.program_input_path,
-                        paths.cairo0_pie_command(&layout_str),
-                        job_id,
-                    )
-                    .await?;
-                    run_cairo(paths.cairo0_run_command(&input.layout, true)?, job_id).await
+                trace!("Running cairo0-run");
+                if bootloader {
+                    let command = paths.cairo0_pie_command(&input.layout.to_string());
+                    command_run(command).await?;
+                    let pie_file_str = paths.pie_output.to_str().unwrap();
+                    let program_input_file_str = paths.program_input_path.to_str().unwrap();
+                    create_template(pie_file_str, program_input_file_str)?;
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
+                    command_run(command).await
                 } else {
-                    run_cairo(paths.cairo0_run_command(&input.layout, false)?, job_id).await
+                    let command = paths.cairo0_run_command(input.layout.clone(), bootloader)?;
+                    command_run(command).await
                 }
             }
         }
     }
 }
 
-async fn generate_pie(
-    pie_output: &Path,
-    program_input_path: &Path,
-    command: Command,
-    job_id: u64,
-) -> Result<(), ProverError> {
-    trace!("Generating PIE for job {}", job_id);
-    let start = Instant::now();
-    command_run(command).await?;
-    trace!(
-        "PIE generated in {:?}ms, for job {}",
-        start.elapsed().as_millis(),
-        job_id
-    );
-    create_template(
-        pie_output.to_str().unwrap(),
-        program_input_path.to_str().unwrap(),
-    )?;
-    Ok(())
-}
-
-async fn run_cairo(command: Command, job_id: u64) -> Result<(), ProverError> {
-    trace!(
-        "Running cairo-run to generate trace from PIE for job {}",
-        job_id
-    );
-    let start = Instant::now();
-    command_run(command).await?;
-    trace!(
-        "Trace generated in {:?}ms, for job {}",
-        start.elapsed().as_millis(),
-        job_id
-    );
-    Ok(())
+pub struct RunPaths<'a> {
+    trace_file: &'a PathBuf,
+    memory_file: &'a PathBuf,
+    public_input_file: &'a PathBuf,
+    private_input_file: &'a PathBuf,
+    program_input_path: &'a PathBuf,
+    program: &'a PathBuf,
+    pie_output: &'a PathBuf,
 }
 
 impl RunPaths<'_> {
@@ -237,13 +124,13 @@ impl RunPaths<'_> {
     }
     pub fn cairo0_run_command(
         &self,
-        layout: &Layout,
+        layout: Layout,
         bootloader: bool,
     ) -> Result<Command, ProverError> {
         let program = if bootloader && layout.is_bootloadable() {
             layout.path()?
         } else {
-            self.program.clone()
+            self.program.to_path_buf()
         };
         let layout = layout.to_string();
         let mut command = Command::new("python");
@@ -293,4 +180,83 @@ impl RunPaths<'_> {
             .arg("--append_return_values");
         command
     }
+}
+
+impl<'a> From<&'a ProvePaths> for RunPaths<'a> {
+    fn from(
+        ProvePaths {
+            trace_file,
+            memory_file,
+            public_input_file,
+            private_input_file,
+            program_input: program_input_path,
+            program: program_path,
+            pie_output,
+            ..
+        }: &'a ProvePaths,
+    ) -> Self {
+        Self {
+            trace_file,
+            memory_file,
+            public_input_file,
+            private_input_file,
+            program_input_path,
+            program: program_path,
+            pie_output,
+        }
+    }
+}
+
+async fn command_run(mut command: Command) -> Result<(), ProverError> {
+    command
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    let child = command.spawn()?;
+    let output = child.wait_with_output().await?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(ProverError::CustomError(stderr.into()));
+    }
+    Ok(())
+}
+
+pub fn prepare_input(felts: &[Felt]) -> String {
+    felts
+        .iter()
+        .fold("[".to_string(), |a, i| a + &i.to_string() + " ")
+        .trim_end()
+        .to_string()
+        + "]"
+}
+
+#[test]
+fn test_prepare_input() {
+    assert_eq!("[]", prepare_input(&[]));
+    assert_eq!("[1]", prepare_input(&[1.into()]));
+    assert_eq!(
+        "[1 2 3 4]",
+        prepare_input(&[1.into(), 2.into(), 3.into(), 4.into()])
+    );
+}
+
+fn create_template(pie_path: &str, file_path: &str) -> std::io::Result<()> {
+    // Manually format the JSON string
+    let json = format!(
+        r#"{{
+  "tasks": [
+    {{
+      "type": "CairoPiePath",
+      "path": "{}",
+      "use_poseidon": true
+    }}
+  ],
+  "single_page": true
+}}"#,
+        pie_path
+    );
+
+    // Write the JSON string to the file
+    fs::write(file_path, json)
 }

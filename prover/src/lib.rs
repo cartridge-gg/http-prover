@@ -1,14 +1,12 @@
 pub mod auth;
 pub mod errors;
-pub mod layout_bridge;
+pub mod extractors;
 pub mod prove;
-pub mod run;
 pub mod server;
 pub mod sse;
 pub mod threadpool;
 pub mod utils;
 pub mod verifier;
-
 use std::path::PathBuf;
 
 use clap::{arg, Parser};

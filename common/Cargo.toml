@@ -9,4 +9,3 @@ serde.workspace = true
 serde_with.workspace = true
 ed25519-dalek.workspace = true
 starknet-types-core.workspace = true
-clap.workspace = true
