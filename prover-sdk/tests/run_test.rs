@@ -1,25 +1,15 @@
-use common::prover_input::*;
-use helpers::{fetch_job, handle_completed_job_response};
-use prover_sdk::{access_key::ProverAccessKey, sdk::ProverSDK};
+use core::panic;
+
+use common::models::JobResult;
+use helpers::fetch_job;
+use prover_sdk::{
+    access_key::ProverAccessKey, sdk::ProverSDK, CairoCompiledProgram, CairoProverInput, Layout,
+};
 use starknet_types_core::felt::Felt;
 use url::Url;
-
 mod helpers;
-
 #[tokio::test]
-async fn test_verify_invalid_proof() {
-    let private_key = std::env::var("PRIVATE_KEY").unwrap();
-    let url = std::env::var("PROVER_URL").unwrap();
-    let access_key = ProverAccessKey::from_hex_string(&private_key).unwrap();
-    let url = Url::parse(&url).unwrap();
-    let sdk = ProverSDK::new(url, access_key).await.unwrap();
-    let result = sdk.clone().verify("wrong proof".to_string()).await;
-    assert!(result.is_ok(), "Failed to verify proof");
-    assert_eq!("false", result.unwrap());
-}
-
-#[tokio::test]
-async fn test_verify_valid_proof() {
+async fn test_cairo_run() {
     let private_key = std::env::var("PRIVATE_KEY").unwrap();
     let url = std::env::var("PROVER_URL").unwrap();
     let access_key = ProverAccessKey::from_hex_string(&private_key).unwrap();
@@ -41,13 +31,27 @@ async fn test_verify_valid_proof() {
         pow_bits: Some(20),
         bootload: false,
     };
-    let job = sdk.clone().prove_cairo(data).await.unwrap();
+    let job = sdk.run_cairo(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
-    let result = handle_completed_job_response(result);
+    match result {
+        JobResult::Prove(_prove_result) => {
+            panic!("Expected run result, got prove result");
+        }
+        JobResult::Run(run_result) => {
+            // Validate private input
+            assert!(
+                !run_result.private_input.is_empty(),
+                "Private input is empty"
+            );
+            // Validate public input
+            assert!(!run_result.public_input.is_empty(), "Public input is empty");
 
-    let result = sdk.clone().verify(result.proof).await;
-    assert!(result.is_ok(), "Failed to verify proof");
-    assert_eq!("true", result.unwrap());
+            // Validate memory
+            assert!(!run_result.memory.is_empty(), "Memory is empty");
+            // Validate trace
+            assert!(!run_result.trace.is_empty(), "Trace is empty");
+        }
+    }
 }

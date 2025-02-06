@@ -4,13 +4,21 @@ mod cairo0;
 use std::{fmt::Display, str::FromStr};
 
 pub use cairo::{CairoCompiledProgram, CairoProverInput};
+pub use cairo0::LayoutBridgeInput;
 pub use cairo0::{Cairo0CompiledProgram, Cairo0ProverInput};
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub enum ProverInput {
     Cairo0(Cairo0ProverInput),
     Cairo(CairoProverInput),
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ValueEnum)]
+pub enum LayoutBridgeOrBootload {
+    Bootload,
+    LayoutBridge,
+    None,
 }
 
 impl ProverInput {

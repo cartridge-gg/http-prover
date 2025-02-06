@@ -1,18 +1,16 @@
 use crate::auth::jwt::Claims;
 use crate::server::AppState;
-use crate::threadpool::{
-    task::{ProveParams, Task, TaskCommon},
-    CairoVersionedInput,
-};
+use crate::threadpool::task::LayoutBridgeParams;
+use crate::threadpool::task::{Task, TaskCommon};
 use axum::Json;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
-use common::prover_input::Cairo0ProverInput;
+use common::prover_input::LayoutBridgeInput;
 use serde_json::json;
 
 pub async fn root(
     State(app_state): State<AppState>,
     _claims: Claims,
-    Json(program_input): Json<Cairo0ProverInput>,
+    Json(program_input): Json<LayoutBridgeInput>,
 ) -> impl IntoResponse {
     let thread_pool = app_state.thread_pool.clone();
     let job_store = app_state.job_store.clone();
@@ -23,14 +21,17 @@ pub async fn root(
         job_store,
         sse_tx: app_state.sse_tx.clone(),
     };
-    let execution_params = ProveParams {
+
+    let layout_bridge_params = LayoutBridgeParams {
         common: task_base,
-        program_input: CairoVersionedInput::Cairo0(program_input.clone()),
+        proof: program_input.proof,
     };
+
     let _ = thread
-        .execute(Task::Prove(execution_params))
+        .execute(Task::LayoutBridge(layout_bridge_params))
         .await
         .into_response();
+
     let body = json!({
         "job_id": job_id
     });

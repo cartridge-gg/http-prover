@@ -1,5 +1,5 @@
 use common::prover_input::*;
-use helpers::fetch_job;
+use helpers::{fetch_job, handle_completed_job_response};
 use prover_sdk::{access_key::ProverAccessKey, sdk::ProverSDK};
 use serde_json::Value;
 
@@ -35,6 +35,8 @@ async fn test_cairo_prove_bootloader() {
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
+    let result = handle_completed_job_response(result);
+
     // //Values calculated using https://github.com/HerodotusDev/integrity
     assert_eq!(result.serialized_proof.len(), 3150);
     assert_eq!(
@@ -79,6 +81,8 @@ async fn test_cairo_prove() {
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
+    let result = handle_completed_job_response(result);
+
     // //Values calculated using https://github.com/HerodotusDev/integrity
     assert_eq!(result.serialized_proof.len(), 2425);
     assert_eq!(
@@ -103,8 +107,7 @@ async fn test_cairo0_prove_bootloader() {
     let access_key = ProverAccessKey::from_hex_string(&private_key).unwrap();
     let url = Url::parse(&url).unwrap();
     let sdk = ProverSDK::new(url, access_key).await.unwrap();
-    let program = std::fs::read_to_string("../examples/cairo0/fibonacci_compiled.json").unwrap();
-    let program: Cairo0CompiledProgram = serde_json::from_str(&program).unwrap();
+    let program = std::fs::read("../examples/cairo0/fibonacci_compiled.json").unwrap();
     let program_input_string = std::fs::read_to_string("../examples/cairo0/input.json").unwrap();
     let program_input: Value = serde_json::from_str(&program_input_string).unwrap();
     let data = Cairo0ProverInput {
@@ -119,6 +122,8 @@ async fn test_cairo0_prove_bootloader() {
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
+    let result = handle_completed_job_response(result);
+
     // //Values calculated using https://github.com/HerodotusDev/integrity
     assert_eq!(result.serialized_proof.len(), 3195);
     assert_eq!(
@@ -143,8 +148,7 @@ async fn test_cairo0_prove() {
     let access_key = ProverAccessKey::from_hex_string(&private_key).unwrap();
     let url = Url::parse(&url).unwrap();
     let sdk = ProverSDK::new(url, access_key).await.unwrap();
-    let program = std::fs::read_to_string("../examples/cairo0/fibonacci_compiled.json").unwrap();
-    let program: Cairo0CompiledProgram = serde_json::from_str(&program).unwrap();
+    let program = std::fs::read("../examples/cairo0/fibonacci_compiled.json").unwrap();
     let program_input_string = std::fs::read_to_string("../examples/cairo0/input.json").unwrap();
     let program_input: Value = serde_json::from_str(&program_input_string).unwrap();
     let data = Cairo0ProverInput {
@@ -159,6 +163,7 @@ async fn test_cairo0_prove() {
     let result = fetch_job(sdk.clone(), job).await;
     assert!(result.is_some());
     let result = result.unwrap();
+    let result = handle_completed_job_response(result);
     //Values calculated using https://github.com/HerodotusDev/integrity
     assert_eq!(result.serialized_proof.len(), 2303);
     assert_eq!(
@@ -204,12 +209,15 @@ async fn test_cairo_multi_prove() {
     let job2 = sdk.prove_cairo(data.clone()).await.unwrap();
     let job3 = sdk.prove_cairo(data.clone()).await.unwrap();
     let result = fetch_job(sdk.clone(), job1).await;
-    let result = sdk.clone().verify(result.unwrap().proof).await.unwrap();
+    let result = handle_completed_job_response(result.unwrap());
+    let result = sdk.clone().verify(result.proof).await.unwrap();
     assert_eq!("true", result);
     let result = fetch_job(sdk.clone(), job2).await;
-    let result = sdk.clone().verify(result.unwrap().proof).await.unwrap();
+    let result = handle_completed_job_response(result.unwrap());
+    let result = sdk.clone().verify(result.proof).await.unwrap();
     assert_eq!("true", result);
     let result = fetch_job(sdk.clone(), job3).await;
-    let result = sdk.clone().verify(result.unwrap().proof).await.unwrap();
+    let result = handle_completed_job_response(result.unwrap());
+    let result = sdk.clone().verify(result.proof).await.unwrap();
     assert_eq!("true", result);
 }

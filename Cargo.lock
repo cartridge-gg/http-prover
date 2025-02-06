@@ -457,25 +457,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-prove"
-version = "0.1.0"
-dependencies = [
- "clap",
- "common",
- "ed25519-dalek",
- "prover-sdk",
- "reqwest 0.11.27",
- "serde",
- "serde_json",
- "starknet-types-core",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "url",
-]
-
-[[package]]
 name = "cc"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -565,6 +546,7 @@ checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 name = "common"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "ed25519-dalek",
  "serde",
  "serde_json",
@@ -2064,6 +2046,25 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "prover-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "ed25519-dalek",
+ "prover",
+ "prover-sdk",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "starknet-types-core",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
 ]
 
 [[package]]
