@@ -14,7 +14,7 @@ pub async fn root(
     _claims: Claims,
     Json(program_input): Json<CairoProverInput>,
 ) -> impl IntoResponse {
-    let thread_pool = app_state.thread_pool.clone();
+    let thread_pool = app_state.proving_thread_pool.clone();
     let job_store = app_state.job_store.clone();
     let job_id = job_store.create_job().await;
     let thread = thread_pool.lock().await;

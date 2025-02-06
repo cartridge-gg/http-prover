@@ -28,7 +28,8 @@ type NonceString = String;
 #[derive(Clone)]
 pub struct AppState {
     pub job_store: JobStore,
-    pub thread_pool: Arc<Mutex<ThreadPool>>,
+    pub proving_thread_pool: Arc<Mutex<ThreadPool>>,
+    pub running_thread_pool: Arc<Mutex<ThreadPool>>,
     pub message_expiration_time: usize,
     pub session_expiration_time: usize,
     pub jwt_secret_key: String,
@@ -72,7 +73,8 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         nonces: Arc::new(Mutex::new(HashMap::new())),
         authorizer,
         job_store: JobStore::default(),
-        thread_pool: Arc::new(Mutex::new(ThreadPool::new(args.num_workers))),
+        proving_thread_pool: Arc::new(Mutex::new(ThreadPool::new(args.prove_workers))),
+        running_thread_pool: Arc::new(Mutex::new(ThreadPool::new(args.run_workers))),
         admin_keys,
         sse_tx: Arc::new(Mutex::new(sse_tx)),
     };
@@ -104,7 +106,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
     trace!("provided public keys {:?}", keys);
 
     serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal(app_state.thread_pool))
+        .with_graceful_shutdown(shutdown_signal(app_state.proving_thread_pool))
         .await?;
 
     Ok(())

@@ -17,7 +17,7 @@ spec:
       containers:
       - name: http-prover
         # image: docker.io/chudas/http-prover:v0.4
-        image: docker.io/chudas/http-prover:v0.5.5
+        image: docker.io/chudas/http-prover:v0.5.6
         ports:
           - containerPort: 3000
         envFrom:
