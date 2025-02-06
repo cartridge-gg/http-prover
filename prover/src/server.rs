@@ -106,7 +106,10 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
     trace!("provided public keys {:?}", keys);
 
     serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal(app_state.proving_thread_pool))
+        .with_graceful_shutdown(shutdown_signal(
+            app_state.proving_thread_pool,
+            app_state.running_thread_pool,
+        ))
         .await?;
 
     Ok(())
