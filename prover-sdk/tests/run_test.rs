@@ -4,6 +4,7 @@ use common::models::JobResult;
 use helpers::fetch_job;
 use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, CairoCompiledProgram, CairoProverInput, Layout,
+    RunResult,
 };
 use starknet_types_core::felt::Felt;
 use url::Url;
@@ -29,7 +30,7 @@ async fn test_cairo_run() {
         program_input,
         n_queries: Some(16),
         pow_bits: Some(20),
-        bootload: false,
+        run_mode: prover_sdk::RunMode::Trace,
     };
     let job = sdk.run_cairo(data).await.unwrap();
     let result = fetch_job(sdk.clone(), job).await;
@@ -40,18 +41,21 @@ async fn test_cairo_run() {
             panic!("Expected run result, got prove result");
         }
         JobResult::Run(run_result) => {
-            // Validate private input
-            assert!(
-                !run_result.private_input.is_empty(),
-                "Private input is empty"
-            );
-            // Validate public input
-            assert!(!run_result.public_input.is_empty(), "Public input is empty");
+            match run_result {
+                RunResult::Pie(_pie) => {
+                    panic!("Expected run result, got pie");
+                }
+                RunResult::Trace(trace) => {
+                    assert!(!trace.private_input.is_empty(), "Private input is empty");
+                    // Validate public input
+                    assert!(!trace.public_input.is_empty(), "Public input is empty");
 
-            // Validate memory
-            assert!(!run_result.memory.is_empty(), "Memory is empty");
-            // Validate trace
-            assert!(!run_result.trace.is_empty(), "Trace is empty");
+                    // Validate memory
+                    assert!(!trace.memory.is_empty(), "Memory is empty");
+                    // Validate trace
+                    assert!(!trace.trace.is_empty(), "Trace is empty");
+                }
+            }
         }
     }
 }
