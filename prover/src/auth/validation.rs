@@ -14,7 +14,7 @@ pub async fn validate_signature(
     State(state): State<AppState>,
     Json(payload): Json<ValidateSignatureRequest>,
 ) -> Result<impl IntoResponse, ProverError> {
-    tracing::info!("Validating signature");
+    tracing::trace!("Validating signature");
     let nonces = state.nonces.lock().await;
     let public_key = nonces.get(&payload.message.nonce);
     let public_key = match public_key {
@@ -25,7 +25,7 @@ pub async fn validate_signature(
             ))
         }
     };
-    tracing::info!("Public key found for nonce");
+    tracing::trace!("Public key found for nonce");
     let encoded_public_key = prefix_hex::encode(public_key.to_bytes());
     let serialized_message = serde_json::to_string(&payload.message)?;
     let verification = public_key
@@ -34,7 +34,7 @@ pub async fn validate_signature(
     if !verification {
         return Err(ProverError::CustomError("Signature is invalid".to_string()));
     }
-    tracing::info!("Signature is valid");
+    tracing::trace!("Signature is valid");
     let expiration =
         chrono::Utc::now() + chrono::Duration::seconds(state.message_expiration_time as i64);
     let token = encode_jwt(
@@ -43,7 +43,7 @@ pub async fn validate_signature(
         Keys::new(state.jwt_secret_key.clone().as_bytes()),
         payload.message.session_key,
     )?;
-    tracing::info!("JWT token generated");
+    tracing::trace!("JWT token generated");
     let cookie_value = format!(
         "{}={}; HttpOnly; Secure; Path=/; Max-Age={}",
         COOKIE_NAME, token, state.session_expiration_time
@@ -54,7 +54,7 @@ pub async fn validate_signature(
         HeaderValue::from_str(&cookie_value)
             .map_err(|_| ProverError::CustomError("Invalid cookie value".to_string()))?,
     );
-    tracing::info!("Cookie set");
+    tracing::trace!("Cookie set");
     Ok((
         headers,
         Json(JWTResponse {

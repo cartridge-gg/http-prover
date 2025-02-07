@@ -1,4 +1,3 @@
-use core::panic;
 use std::path::PathBuf;
 
 use clap::Parser;
@@ -73,11 +72,8 @@ impl Prove {
 pub fn handle_completed_job_response(result: JobResult) -> ProverResult {
     match result {
         JobResult::Prove(prove_result) => prove_result,
-        JobResult::Run(run_result) => {
-            panic!(
-                "Expected a prove result, but got a run result: {:?}",
-                run_result
-            );
+        JobResult::Run(_) => {
+            unreachable!("Expected a prove result, but got a run result");
         }
     }
 }

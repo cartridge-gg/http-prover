@@ -8,7 +8,6 @@ pub mod sse;
 pub mod threadpool;
 pub mod utils;
 pub mod verifier;
-
 use std::path::PathBuf;
 
 use clap::{arg, Parser};

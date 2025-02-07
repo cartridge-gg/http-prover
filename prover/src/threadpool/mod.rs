@@ -12,9 +12,9 @@ use tracing::{error, trace};
 pub mod layout_bridge;
 pub mod prove;
 pub mod run;
+pub mod snos;
 pub mod task;
 pub mod utlis;
-
 pub use run::CairoVersionedInput;
 
 type ReceiverType = Arc<Mutex<mpsc::Receiver<Task>>>;

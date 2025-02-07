@@ -24,7 +24,7 @@ serde = { version = "1.0.209", features = ["derive"] }
 common = { path = "common" }
 prover-sdk = { path = "prover-sdk" }
 prover = { path = "prover" }
-reqwest = { version = "0.11.27", features = [
+reqwest = { version = "0.12.12", features = [
     "blocking",
     "json",
     "rustls-tls",
@@ -47,5 +47,8 @@ starknet-types-core = "~0.1.4"
 futures = "0.3.30"
 async-stream = "0.3.5"
 cairo-proof-parser = {git = "https://github.com/cartridge-gg/cairo-proof-parser.git",rev = "f175d58"}
-starknet-crypto = "0.7.0"
+starknet-crypto = "0.7.4"
 anyhow = "1.0.89"
+prove_block = { git = "https://github.com/chudkowsky/snos", rev = "bbae3c8fa7c38e46b0d80fc1ba9f3de8933ba341" }
+
+cairo-vm = { git = "https://github.com/Moonsong-Labs/cairo-vm", branch = "notlesh/snos-2024-11-04", default-features = false }

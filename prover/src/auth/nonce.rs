@@ -67,14 +67,14 @@ pub async fn generate_nonce(
     if !state.authorizer.is_authorized(key).await? {
         return Err(ProverError::Auth(AuthError::Unauthorized));
     }
-    tracing::info!("Authorized");
+    tracing::trace!("Authorized");
     let message_expiration_time: usize = state.message_expiration_time;
     let nonce: Nonce = Nonce::new(32);
     let noce_string = nonce.to_string();
     let mut nonces = state.nonces.lock().await;
     nonces.insert(noce_string, key);
     drop(nonces);
-    tracing::info!("Nonce generated: {}", nonce);
+    tracing::trace!("Nonce generated: {}", nonce);
     Ok(Json(GenerateNonceResponse {
         nonce,
         expiration: message_expiration_time,

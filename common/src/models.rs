@@ -20,7 +20,7 @@ pub enum JobStatus {
     Unknown,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ProverResult {
     pub proof: String,
     pub serialized_proof: Vec<Felt>,
@@ -42,7 +42,7 @@ pub enum RunResult {
     Pie(Vec<u8>),
     Trace(TraceFiles),
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum JobResult {
     Prove(ProverResult),

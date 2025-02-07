@@ -1,9 +1,10 @@
 FROM rust:1-alpine AS chef
-RUN rustup install 1.81.0
+RUN rustup install nightly
+RUN rustup default nightly
 RUN rustup component add cargo clippy rust-docs rust-std rustc rustfmt
 
 # Use apk for package management in Alpine
-RUN apk add --no-cache build-base libressl-dev
+RUN apk add --no-cache build-base libressl-dev git 
 RUN cargo install cargo-chef
 
 FROM chef AS planner
@@ -18,7 +19,9 @@ WORKDIR /app
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer!
 RUN cargo chef cook --release --recipe-path recipe.json
-RUN cargo install --git https://github.com/chudkowsky/cairo-vm.git --rev 6518777143224043c9dfad72c868843adb2c4145 cairo1-run
+RUN rustup install 1.81.0
+RUN RUSTUP_TOOLCHAIN=1.81.0 cargo install --git https://github.com/chudkowsky/cairo-vm.git --rev 6518777143224043c9dfad72c868843adb2c4145 cairo1-run
+RUN rustup default nightly
 RUN cargo build --release -p prover
 
 # Build application

@@ -30,3 +30,5 @@ async-stream.workspace = true
 cairo-proof-parser.workspace = true
 starknet-crypto.workspace = true
 anyhow.workspace = true
+prove_block.workspace = true
+cairo-vm.workspace = true

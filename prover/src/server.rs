@@ -21,7 +21,7 @@ use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast::{self, Sender};
 use tokio::sync::Mutex;
-use tracing::trace;
+use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 type NonceString = String;
@@ -43,7 +43,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "trace".into()),
+                .unwrap_or_else(|_| "info,prove_block=off,rpc_client=off".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -100,10 +100,10 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
 
     let listener = TcpListener::bind(address).await?;
 
-    trace!("Listening on {}", address);
+    info!("Listening on {}", address);
 
     let keys = args.authorized_keys.clone();
-    trace!("provided public keys {:?}", keys);
+    info!("provided public keys {:?}", keys);
 
     serve(listener, app)
         .with_graceful_shutdown(shutdown_signal(
