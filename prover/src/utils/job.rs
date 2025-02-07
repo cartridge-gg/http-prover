@@ -76,7 +76,7 @@ impl JobStoreInner {
     }
     // Clear old jobs so that the memory doesn't go balistic if the server runs for a long time
     fn clear_old_jobs(&mut self) {
-        let expiry_duration = Duration::from_secs(5 * 60 * 60); // 5 hours //TODO: make this configurable
+        let expiry_duration = Duration::from_secs(60 * 60); // 1 hour //TODO: make this configurable
         while let Some((id, job)) = self.jobs.pop_first() {
             if job.created.elapsed() < expiry_duration {
                 self.jobs.insert(id, job);

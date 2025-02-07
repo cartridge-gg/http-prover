@@ -1,10 +1,14 @@
 use crate::threadpool::ThreadPool;
+use futures::join;
 use std::sync::Arc;
 use tokio::signal;
 use tokio::sync::Mutex;
 use tracing::info; // Import the logging macro
 
-pub async fn shutdown_signal(thread_pool: Arc<Mutex<ThreadPool>>) {
+pub async fn shutdown_signal(
+    proving_thread_pool: Arc<Mutex<ThreadPool>>,
+    running_thread_pool: Arc<Mutex<ThreadPool>>,
+) {
     let ctrl_c = async {
         signal::ctrl_c()
             .await
@@ -33,10 +37,27 @@ pub async fn shutdown_signal(thread_pool: Arc<Mutex<ThreadPool>>) {
 
     // Trigger thread pool shutdown
     info!("Shutting down the thread pool...");
-    let mut thread_pool = thread_pool.lock().await;
-    if let Err(e) = thread_pool.shutdown().await {
-        eprintln!("Error during thread pool shutdown: {:?}", e);
-    } else {
-        info!("Thread pool shutdown completed successfully.");
-    }
+    info!("Shutting down the thread pools...");
+
+    let (proving_result, running_result) =
+        {
+            let mut proving_thread_pool = proving_thread_pool.lock().await;
+            let mut running_thread_pool = running_thread_pool.lock().await;
+
+            join!(
+                async {
+                    proving_thread_pool.shutdown().await.map_err(|e| {
+                        eprintln!("Error during proving thread pool shutdown: {:?}", e)
+                    })
+                },
+                async {
+                    running_thread_pool.shutdown().await.map_err(|e| {
+                        eprintln!("Error during running thread pool shutdown: {:?}", e)
+                    })
+                }
+            )
+        };
+
+    info!("Proving thread pool shutdown: {:?}", proving_result);
+    info!("Running thread pool shutdown: {:?}", running_result);
 }
