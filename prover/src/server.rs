@@ -43,7 +43,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,prove_block=off,rpc_client=off".into()),
+                .unwrap_or_else(|_| "debug,rpc_client,hyper=off".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();

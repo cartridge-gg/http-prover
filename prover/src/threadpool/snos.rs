@@ -30,15 +30,19 @@ pub async fn snos_pie_gen(
         &program_input.rpc_provider,
         program_input.layout,
         program_input.full_output,
-    );
-    let result = result.await.unwrap();
+    )
+    .await
+    .map_err(|e| ProverError::CustomError(e.to_string()))?;
+
     let elapsed = start.elapsed();
     info!("Snos pie generation for job {} took {:?}", job_id, elapsed);
+
     let sender = sse_tx.lock().await;
 
     if result.0.run_validity_checks().is_ok() {
         result.0.write_zip_file(&snos_pie_path)?;
         let pie = fs::read(&snos_pie_path).await?;
+
         job_store
             .update_job_status(
                 job_id,
