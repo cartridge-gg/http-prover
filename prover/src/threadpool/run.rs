@@ -14,7 +14,7 @@ use tokio::{
     sync::{broadcast::Sender, Mutex},
     time::Instant,
 };
-use tracing::trace;
+use tracing::info;
 
 use crate::{
     errors::ProverError,
@@ -75,7 +75,7 @@ pub async fn run(
     let result = program_input
         .prepare_and_run(&RunPaths::from(&paths), run_mode.clone(), job_id)
         .await;
-    trace!("Trace generated for job {}", job_id);
+    info!("Trace generated for job {}", job_id);
     let sender = sse_tx.lock().await;
     if result.is_ok() {
         let runner_result = match run_mode {
@@ -217,10 +217,10 @@ async fn generate_pie(
     command: Command,
     job_id: u64,
 ) -> Result<(), ProverError> {
-    trace!("Generating PIE for job {}", job_id);
+    info!("Generating PIE for job {}", job_id);
     let start = Instant::now();
     command_run(command).await?;
-    trace!(
+    info!(
         "PIE generated in {:?}ms, for job {}",
         start.elapsed().as_millis(),
         job_id
@@ -233,13 +233,13 @@ async fn generate_pie(
 }
 
 async fn run_cairo(command: Command, job_id: u64) -> Result<(), ProverError> {
-    trace!(
+    info!(
         "Running cairo-run to generate trace from PIE for job {}",
         job_id
     );
     let start = Instant::now();
     command_run(command).await?;
-    trace!(
+    info!(
         "Trace generated in {:?}ms, for job {}",
         start.elapsed().as_millis(),
         job_id
