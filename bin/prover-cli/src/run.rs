@@ -133,7 +133,7 @@ pub async fn cairo_runner(args: CairoRunner, sdk: ProverSDK) -> u64 {
 
 pub fn handle_completed_job_response(result: JobResult) -> RunResult {
     match result {
-        JobResult::Prove(_) => {
+        JobResult::Prove(_) | JobResult::Snos(_) => {
             panic!("Expected a prove result, but got a run result",);
         }
         JobResult::Run(run_result) => run_result,

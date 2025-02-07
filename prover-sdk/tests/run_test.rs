@@ -37,12 +37,12 @@ async fn test_cairo_run() {
     assert!(result.is_some());
     let result = result.unwrap();
     match result {
-        JobResult::Prove(_prove_result) => {
+        JobResult::Prove(_) | JobResult::Snos(_) => {
             panic!("Expected run result, got prove result");
         }
         JobResult::Run(run_result) => {
             match run_result {
-                RunResult::Pie(_pie) => {
+                RunResult::Pie(_) => {
                     panic!("Expected run result, got pie");
                 }
                 RunResult::Trace(trace) => {

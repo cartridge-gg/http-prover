@@ -17,11 +17,8 @@ pub async fn fetch_job(sdk: ProverSDK, job: u64) -> Option<JobResult> {
 pub fn handle_completed_job_response(result: JobResult) -> ProverResult {
     match result {
         JobResult::Prove(prove_result) => prove_result,
-        JobResult::Run(run_result) => {
-            panic!(
-                "Expected a prove result, but got a run result: {:?}",
-                run_result
-            );
+        JobResult::Run(_) | JobResult::Snos(_) => {
+            unreachable!("Expected a prove result, but got a run result");
         }
     }
 }

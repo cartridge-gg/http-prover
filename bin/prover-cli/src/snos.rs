@@ -4,7 +4,8 @@ use crate::fetch::{fetch_job_polling, fetch_job_sse};
 use cairo_vm::types::layout_name::LayoutName::{self};
 use clap::Parser;
 use prover_sdk::{
-    access_key::ProverAccessKey, sdk::ProverSDK, snos_input::SnosPieInput, JobResult, RunResult,
+    access_key::ProverAccessKey, models::SnosPieOutput, sdk::ProverSDK, snos_input::SnosPieInput,
+    JobResult,
 };
 use url::Url;
 
@@ -56,20 +57,18 @@ impl SnosRunner {
             };
             let path: std::path::PathBuf = self.program_output;
             let pie = handle_completed_job_response(result);
-            let pie = match pie {
-                RunResult::Pie(pie) => pie,
-                _ => unreachable!("Expected a pie result, but got a run result"),
-            };
-            fs::write(path, pie).unwrap();
+            println!("Number of steps: {}", pie.n_steps);
+            println!("Output: {:?}", pie.program_output);
+            fs::write(path, pie.pie).unwrap();
         }
     }
 }
 
-pub fn handle_completed_job_response(result: JobResult) -> RunResult {
+pub fn handle_completed_job_response(result: JobResult) -> SnosPieOutput {
     match result {
-        JobResult::Prove(_) => {
+        JobResult::Prove(_) | JobResult::Run(_) => {
             unreachable!("Expected a prove result, but got a run result",);
         }
-        JobResult::Run(run_result) => run_result,
+        JobResult::Snos(run_result) => run_result,
     }
 }

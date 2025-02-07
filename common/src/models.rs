@@ -42,11 +42,19 @@ pub enum RunResult {
     Pie(Vec<u8>),
     Trace(TraceFiles),
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SnosPieOutput {
+    pub pie: Vec<u8>,
+    pub program_output: Vec<Felt>,
+    pub n_steps: usize,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum JobResult {
     Prove(ProverResult),
     Run(RunResult),
+    Snos(SnosPieOutput),
 }
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]

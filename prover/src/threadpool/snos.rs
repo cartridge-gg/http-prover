@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
-use common::{models::JobStatus, snos_input::SnosPieInput};
+use cairo_vm::{vm::runners::cairo_pie::CairoPie, Felt252};
+use common::{
+    models::{JobResult, JobStatus, SnosPieOutput},
+    snos_input::SnosPieInput,
+};
+use prove_block::get_memory_segment;
 use prove_block::prove_block;
 use tempfile::tempdir;
 use tokio::{
@@ -40,16 +45,22 @@ pub async fn snos_pie_gen(
     let sender = sse_tx.lock().await;
 
     if result.0.run_validity_checks().is_ok() {
+        let pie = result.0.clone();
+        let steps = pie.extract_steps();
+        info!("Pie for job {}, have steps: {}", job_id, steps);
+        let output = pie.extract_output();
         result.0.write_zip_file(&snos_pie_path)?;
         let pie = fs::read(&snos_pie_path).await?;
-
+        let snos_pie = SnosPieOutput {
+            pie,
+            n_steps: steps,
+            program_output: output,
+        };
         job_store
             .update_job_status(
                 job_id,
                 JobStatus::Completed,
-                Some(serde_json::to_string(&common::models::JobResult::Run(
-                    common::models::RunResult::Pie(pie),
-                ))?),
+                Some(serde_json::to_string(&JobResult::Snos(snos_pie))?),
             )
             .await;
         if sender.receiver_count() > 0 {
@@ -69,4 +80,23 @@ pub async fn snos_pie_gen(
         }
     }
     Ok(())
+}
+
+trait SnosPie {
+    fn extract_output(&self) -> Vec<Felt252>;
+    fn extract_steps(&self) -> usize;
+}
+impl SnosPie for CairoPie {
+    fn extract_output(&self) -> Vec<Felt252> {
+        let output_segment_index = 2_usize;
+        let output_segment = get_memory_segment(self, output_segment_index);
+        let output: Vec<cairo_vm::Felt252> = output_segment
+            .iter()
+            .map(|(_key, value)| value.get_int().unwrap())
+            .collect::<Vec<_>>();
+        output
+    }
+    fn extract_steps(&self) -> usize {
+        self.execution_resources.n_steps
+    }
 }
