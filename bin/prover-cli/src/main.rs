@@ -12,6 +12,9 @@ use config::ConfigGenerator;
 pub mod layout_bridge;
 use layout_bridge::LayoutBridgeRunner;
 
+pub mod snos;
+use snos::SnosRunner;
+
 pub mod common;
 pub mod errors;
 pub mod fetch;
@@ -33,6 +36,8 @@ enum Subcommands {
     Config(ConfigGenerator),
     #[clap(about = "Generate prove from layout bridge")]
     LayoutBridge(LayoutBridgeRunner),
+    #[clap(about = "Generate snos pie")]
+    Snos(SnosRunner),
 }
 
 #[tokio::main]
@@ -50,6 +55,9 @@ pub async fn main() {
         }
         Subcommands::LayoutBridge(layout_bridge) => {
             layout_bridge.run().await;
+        }
+        Subcommands::Snos(snos) => {
+            snos.run().await;
         }
     }
 }

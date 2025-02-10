@@ -1,11 +1,12 @@
 use crate::{
     errors::ProverError,
-    threadpool::{layout_bridge::layout_bridge, prove::prove},
+    threadpool::{layout_bridge::layout_bridge, prove::prove, snos::snos_pie_gen},
     utils::job::JobStore,
 };
 
 use std::sync::Arc;
 
+use common::snos_input::SnosPieInput;
 use tokio::sync::{broadcast::Sender, Mutex};
 
 use super::{run::run, CairoVersionedInput};
@@ -36,11 +37,15 @@ pub struct LayoutBridgeParams {
     pub common: TaskCommon,
     pub proof: String,
 }
-
+pub struct SnosParams {
+    pub common: TaskCommon,
+    pub input: SnosPieInput,
+}
 pub enum Task {
     Run(RunParams),
     Prove(ProveParams),
     LayoutBridge(LayoutBridgeParams),
+    Snos(SnosParams),
 }
 
 impl Task {
@@ -49,6 +54,7 @@ impl Task {
             Task::Prove(params) => params.common.as_tuple(),
             Task::Run(params) => params.common.as_tuple(),
             Task::LayoutBridge(params) => params.common.as_tuple(),
+            Task::Snos(params) => params.common.as_tuple(),
         }
     }
 
@@ -77,6 +83,17 @@ impl Task {
             Task::LayoutBridge(params) => {
                 info!("Executing layout bridge for job {}", params.common.job_id);
                 layout_bridge(&params.common, &params.proof).await
+            }
+            Task::Snos(params) => {
+                let program_input = params.input.clone();
+                info!("Executing snos for job {}", params.common.job_id);
+                snos_pie_gen(
+                    params.common.job_id,
+                    params.common.job_store.clone(),
+                    program_input,
+                    params.common.sse_tx.clone(),
+                )
+                .await
             }
         }
     }

@@ -7,14 +7,14 @@ use tokio::{
     sync::{mpsc, Mutex},
     task::JoinHandle,
 };
-use tracing::{error, trace};
+use tracing::{error, info};
 
 pub mod layout_bridge;
 pub mod prove;
 pub mod run;
+pub mod snos;
 pub mod task;
 pub mod utlis;
-
 pub use run::CairoVersionedInput;
 
 type ReceiverType = Arc<Mutex<mpsc::Receiver<Task>>>;
@@ -87,7 +87,7 @@ impl Worker {
                 let message = receiver.lock().await.recv().await;
                 match message {
                     Some(task) => {
-                        trace!("Worker {id} got a job; executing.");
+                        info!("Worker {id} got a job; executing.");
 
                         let (job_id, job_store, sse_tx) = task.extract_common();
 
@@ -115,10 +115,10 @@ impl Worker {
                             error!("Worker {id} encountered an error in job {job_id}: {:?}", e);
                         }
 
-                        trace!("Worker {id} finished the job.");
+                        info!("Worker {id} finished the job.");
                     }
                     None => {
-                        trace!("Worker {id} detected shutdown signal.");
+                        info!("Worker {id} detected shutdown signal.");
                         break;
                     }
                 }

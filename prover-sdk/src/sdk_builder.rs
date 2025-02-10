@@ -160,6 +160,7 @@ impl ProverSDKBuilder {
             run_cairo0: self.base_url.join("run/cairo0")?,
             run_cairo: self.base_url.join("run/cairo")?,
             layout_bridge: self.base_url.join("layout-bridge")?,
+            snos_pie_gen: self.base_url.join("run/snos")?,
             verify: self.base_url.join("verify")?,
             get_job: self.base_url.join("get-job")?,
             register: self.base_url.join("register")?,

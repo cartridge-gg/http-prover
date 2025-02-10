@@ -17,3 +17,4 @@ reqwest.workspace = true
 ed25519-dalek.workspace = true
 starknet-types-core.workspace = true
 prover.workspace = true
+cairo-vm.workspace = true

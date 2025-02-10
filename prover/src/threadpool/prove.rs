@@ -14,7 +14,7 @@ use std::sync::Arc;
 use tempfile::tempdir;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::Mutex;
-use tracing::trace;
+use tracing::{info, trace};
 
 #[allow(clippy::too_many_arguments)]
 pub async fn prove(
@@ -46,7 +46,7 @@ pub async fn prove(
     let start = tokio::time::Instant::now();
     let prove_status = paths.prove_command().spawn()?.wait().await?;
     let elapsed = start.elapsed();
-    trace!(
+    info!(
         "Prover finished in {:?} ms for job: {}",
         elapsed.as_millis(),
         job_id

@@ -2,6 +2,7 @@ use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk_builder::ProverS
 use common::{
     prover_input::{Cairo0ProverInput, CairoProverInput, LayoutBridgeInput, ProverInput},
     requests::AddKeyRequest,
+    snos_input::SnosPieInput,
 };
 use ed25519_dalek::{ed25519::signature::SignerMut, VerifyingKey};
 use futures::StreamExt;
@@ -17,6 +18,7 @@ pub struct ProverSDK {
     pub run_cairo0: Url,
     pub run_cairo: Url,
     pub layout_bridge: Url,
+    pub snos_pie_gen: Url,
     pub verify: Url,
     pub get_job: Url,
     pub register: Url,
@@ -110,6 +112,22 @@ impl ProverSDK {
             .send()
             .await?;
 
+        if !response.status().is_success() {
+            let response_data: String = response.text().await?;
+            tracing::error!("{}", response_data);
+            return Err(SdkErrors::ProveResponseError(response_data));
+        }
+        let response_data = response.text().await?;
+        let job = serde_json::from_str::<JobId>(&response_data)?;
+        Ok(job.job_id)
+    }
+    pub async fn snos_pie_gen(&self, data: SnosPieInput) -> Result<u64, SdkErrors> {
+        let response = self
+            .client
+            .post(self.snos_pie_gen.clone())
+            .json(&serde_json::to_value(&data).unwrap())
+            .send()
+            .await?;
         if !response.status().is_success() {
             let response_data: String = response.text().await?;
             tracing::error!("{}", response_data);
