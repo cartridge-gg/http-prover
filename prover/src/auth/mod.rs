@@ -14,6 +14,7 @@ use http_body_util::BodyExt;
 use serde_json::{json, Value};
 use sha2::Digest;
 use sha2::Sha256;
+use tokio::time::Instant;
 use tracing::trace;
 
 use crate::server::AppState;
@@ -35,6 +36,23 @@ pub async fn signature_verification_middleware(
         Err(err) => return (StatusCode::BAD_REQUEST, err).into_response(),
     };
     trace!("Received signature_hex: {}", signature_hex);
+
+    let nonce_header = match headers.get("X-Nonce") {
+        Some(header) => header.to_str().map_err(|_| "Invalid header format"),
+        None => Err("Missing X-Nonce header"),
+    };
+    let nonce = match nonce_header {
+        Ok(nonce) => nonce.parse::<u64>().map_err(|_| "Invalid nonce format"),
+        Err(err) => return (StatusCode::BAD_REQUEST, err).into_response(),
+    };
+    let nonce = match nonce {
+        Ok(nonce) => nonce,
+        Err(err) => return (StatusCode::BAD_REQUEST, err).into_response(),
+    };
+
+    if !verify_nonce(&app_state, nonce).await {
+        return (StatusCode::UNAUTHORIZED, "Invalid nonce").into_response();
+    };
 
     let mut signature_bytes = [0u8; 64];
     if hex::decode_to_slice(signature_hex, &mut signature_bytes).is_err() {
@@ -62,7 +80,6 @@ pub async fn signature_verification_middleware(
     if now.signed_duration_since(timestamp) > Duration::seconds(30) {
         return (StatusCode::UNAUTHORIZED, "Timestamp too old").into_response();
     }
-
     let (parts, body) = request.into_parts();
 
     let bytes = match body.collect().await {
@@ -77,10 +94,11 @@ pub async fn signature_verification_middleware(
     let signed_data = json!(
         {
             "data": value,
-            "timestamp": timestamp_str
-
+            "timestamp": timestamp_str,
+            "nonce": nonce
         }
     );
+    cleanup_nonces(&app_state).await;
 
     let val_bytes = match serde_json::to_vec(&signed_data) {
         Ok(v) => v,
@@ -111,4 +129,19 @@ pub async fn signature_verification_middleware(
         )
             .into_response(),
     }
+}
+
+async fn verify_nonce(app_state: &AppState, nonce: u64) -> bool {
+    let mut nonces = app_state.nonces.lock().await;
+    if nonces.contains_key(&nonce) {
+        return false; // Nonce already used
+    }
+    nonces.insert(nonce, Instant::now() + tokio::time::Duration::from_secs(30));
+    true
+}
+
+async fn cleanup_nonces(app_state: &AppState) {
+    let mut nonces = app_state.nonces.lock().await;
+    let now = Instant::now();
+    nonces.retain(|_, &mut expiry| expiry > now);
 }

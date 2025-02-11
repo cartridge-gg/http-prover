@@ -31,10 +31,10 @@ impl HttpProverData for ProverInput {
             ProverInput::Cairo(input) => serde_json::to_value(input).unwrap(),
         }
     }
-    fn sign(&self, signing_key: SigningKey, timestamp: String) -> String {
+    fn sign(&self, signing_key: SigningKey, timestamp: String, nonce: u64) -> String {
         match self {
-            ProverInput::Cairo0(input) => sign_data(input, &timestamp, &signing_key),
-            ProverInput::Cairo(input) => sign_data(input, &timestamp, &signing_key),
+            ProverInput::Cairo0(input) => sign_data(input, &timestamp, &signing_key, nonce),
+            ProverInput::Cairo(input) => sign_data(input, &timestamp, &signing_key, nonce),
         }
     }
 }
@@ -43,8 +43,8 @@ impl HttpProverData for LayoutBridgeInput {
     fn to_json_value(&self) -> serde_json::Value {
         serde_json::to_value(self).unwrap()
     }
-    fn sign(&self, signing_key: SigningKey, timestamp: String) -> String {
-        sign_data(self, &timestamp, &signing_key)
+    fn sign(&self, signing_key: SigningKey, timestamp: String, nonce: u64) -> String {
+        sign_data(self, &timestamp, &signing_key, nonce)
     }
 }
 

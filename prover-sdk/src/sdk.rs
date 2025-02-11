@@ -9,6 +9,7 @@ use common::{
 use ed25519_dalek::{ed25519::signature::Signer, VerifyingKey};
 
 use futures::StreamExt;
+use rand::Rng;
 use reqwest::{Client, Response};
 use serde::Deserialize;
 use url::Url;
@@ -66,14 +67,16 @@ impl ProverSDK {
         data: T,
         url: &Url,
     ) -> Result<u64, SdkErrors> {
+        let nonce = rand::thread_rng().gen::<u64>();
         let current_time = Utc::now().to_rfc3339();
-        let signature = data.sign(self.authority.0.clone(), current_time.clone());
+        let signature = data.sign(self.authority.0.clone(), current_time.clone(), nonce);
 
         let response = self
             .client
             .post(url.clone())
             .header("X-Signature", signature)
             .header("X-Timestamp", current_time)
+            .header("X-Nonce", nonce)
             .json(&data.to_json_value())
             .send()
             .await?;

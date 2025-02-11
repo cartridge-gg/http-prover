@@ -18,6 +18,8 @@ use axum::{
 };
 use core::net::SocketAddr;
 use ed25519_dalek::VerifyingKey;
+use std::collections::HashMap;
+use tokio::time::Instant;
 
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -31,6 +33,7 @@ pub struct AppState {
     pub job_store: JobStore,
     pub proving_thread_pool: Arc<Mutex<ThreadPool>>,
     pub running_thread_pool: Arc<Mutex<ThreadPool>>,
+    pub nonces: Arc<Mutex<HashMap<u64, Instant>>>,
     pub authorizer: Authorizer,
     pub admin_keys: Vec<VerifyingKey>,
     pub sse_tx: Arc<Mutex<Sender<String>>>,
@@ -68,6 +71,7 @@ pub async fn start(args: Args) -> Result<(), ProverError> {
         job_store: JobStore::default(),
         proving_thread_pool: Arc::new(Mutex::new(ThreadPool::new(args.prove_workers))),
         running_thread_pool: Arc::new(Mutex::new(ThreadPool::new(args.run_workers))),
+        nonces: Arc::new(Mutex::new(HashMap::new())),
         admin_keys,
         sse_tx: Arc::new(Mutex::new(sse_tx)),
     };

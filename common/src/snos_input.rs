@@ -16,7 +16,12 @@ impl HttpProverData for SnosPieInput {
     fn to_json_value(&self) -> serde_json::Value {
         serde_json::to_value(self).unwrap()
     }
-    fn sign(&self, signing_key: ed25519_dalek::SigningKey, timestamp: String) -> String {
-        sign_data(self, &timestamp, &signing_key)
+    fn sign(
+        &self,
+        signing_key: ed25519_dalek::SigningKey,
+        timestamp: String,
+        nonce: u64,
+    ) -> String {
+        sign_data(self, &timestamp, &signing_key, nonce)
     }
 }
