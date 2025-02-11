@@ -72,48 +72,44 @@ pub async fn run(
 
     let paths = ProvePaths::new(dir);
     let (_, _, run_mode) = program_input.get_parameters();
-    let result = program_input
+    program_input
         .prepare_and_run(&RunPaths::from(&paths), run_mode.clone(), job_id)
-        .await;
+        .await
+        .map_err(|e| {
+            ProverError::TraceGenerationError(format!(
+                "Failed to generate trace, cairo-run error: {}",
+                e
+            ))
+        })?;
     info!("Trace generated for job {}", job_id);
     let sender = sse_tx.lock().await;
-    if result.is_ok() {
-        let runner_result = match run_mode {
-            RunMode::Bootload | RunMode::Trace => {
-                let memory = fs::read(&paths.memory_file)?;
-                let trace = fs::read(&paths.trace_file)?;
-                let public_input = fs::read_to_string(paths.public_input_file)?;
-                let private_input = fs::read_to_string(paths.private_input_file)?;
-                RunResult::Trace(TraceFiles {
-                    memory,
-                    trace,
-                    public_input,
-                    private_input,
-                })
-            }
-            RunMode::Pie => RunResult::Pie(fs::read(&paths.pie_output)?),
-        };
-        job_store
-            .update_job_status(
-                job_id,
-                JobStatus::Completed,
-                serde_json::to_string(&JobResult::Run(runner_result)).ok(),
-            )
-            .await;
-        if sender.receiver_count() > 0 {
-            sender
-                .send(serde_json::to_string(&(JobStatus::Completed, job_id))?)
-                .unwrap();
+
+    let runner_result = match run_mode {
+        RunMode::Bootload | RunMode::Trace => {
+            let memory = fs::read(&paths.memory_file)?;
+            let trace = fs::read(&paths.trace_file)?;
+            let public_input = fs::read_to_string(paths.public_input_file)?;
+            let private_input = fs::read_to_string(paths.private_input_file)?;
+            RunResult::Trace(TraceFiles {
+                memory,
+                trace,
+                public_input,
+                private_input,
+            })
         }
-    } else {
-        job_store
-            .update_job_status(job_id, JobStatus::Failed, None)
-            .await;
-        if sender.receiver_count() > 0 {
-            sender
-                .send(serde_json::to_string(&(JobStatus::Failed, job_id))?)
-                .unwrap();
-        }
+        RunMode::Pie => RunResult::Pie(fs::read(&paths.pie_output)?),
+    };
+    job_store
+        .update_job_status(
+            job_id,
+            JobStatus::Completed,
+            serde_json::to_string(&JobResult::Run(runner_result)).ok(),
+        )
+        .await;
+    if sender.receiver_count() > 0 {
+        sender
+            .send(serde_json::to_string(&(JobStatus::Completed, job_id))?)
+            .unwrap();
     }
     Ok(())
 }

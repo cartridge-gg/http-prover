@@ -1,10 +1,13 @@
-use crate::{access_key::ProverAccessKey, errors::SdkErrors, sdk_builder::ProverSDKBuilder};
+use crate::{access_key::ProverAccessKey, errors::SdkErrors};
+use chrono::Utc;
 use common::{
     prover_input::{Cairo0ProverInput, CairoProverInput, LayoutBridgeInput, ProverInput},
     requests::AddKeyRequest,
     snos_input::SnosPieInput,
+    HttpProverData,
 };
-use ed25519_dalek::{ed25519::signature::SignerMut, VerifyingKey};
+use ed25519_dalek::{ed25519::signature::Signer, VerifyingKey};
+
 use futures::StreamExt;
 use reqwest::{Client, Response};
 use serde::Deserialize;
@@ -40,11 +43,50 @@ impl ProverSDK {
         } else {
             url
         };
-        let auth_url = url.join("auth")?;
-        ProverSDKBuilder::new(auth_url, url)
-            .auth(access_key)
-            .await?
-            .build()
+        let client = reqwest::Client::new();
+
+        Ok(ProverSDK {
+            client,
+            prover_cairo0: url.join("prove/cairo0")?,
+            prover_cairo: url.join("prove/cairo")?,
+            run_cairo0: url.join("run/cairo0")?,
+            run_cairo: url.join("run/cairo")?,
+            layout_bridge: url.join("layout-bridge")?,
+            snos_pie_gen: url.join("run/snos")?,
+            verify: url.join("verify")?,
+            get_job: url.join("get-job")?,
+            register: url.join("register")?,
+            sse: url.join("sse")?,
+            authority: access_key,
+        })
+    }
+
+    async fn send_prover_request<T: HttpProverData>(
+        &self,
+        data: T,
+        url: &Url,
+    ) -> Result<u64, SdkErrors> {
+        let current_time = Utc::now().to_rfc3339();
+        let signature = data.sign(self.authority.0.clone(), current_time.clone());
+
+        let response = self
+            .client
+            .post(url.clone())
+            .header("X-Signature", signature)
+            .header("X-Timestamp", current_time)
+            .json(&data.to_json_value())
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let response_data: String = response.text().await?;
+            tracing::error!("{}", response_data);
+            return Err(SdkErrors::ProveResponseError(response_data));
+        }
+
+        let response_data = response.text().await?;
+        let job = serde_json::from_str::<JobId>(&response_data)?;
+        Ok(job.job_id)
     }
 
     pub async fn prove_cairo0(&self, data: Cairo0ProverInput) -> Result<u64, SdkErrors> {
@@ -68,22 +110,9 @@ impl ProverSDK {
     }
 
     async fn prove(&self, data: ProverInput, url: Url) -> Result<u64, SdkErrors> {
-        let response = self
-            .client
-            .post(url.clone())
-            .json(&data.to_json_value())
-            .send()
-            .await?;
-
-        if !response.status().is_success() {
-            let response_data: String = response.text().await?;
-            tracing::error!("{}", response_data);
-            return Err(SdkErrors::ProveResponseError(response_data));
-        }
-        let response_data = response.text().await?;
-        let job = serde_json::from_str::<JobId>(&response_data)?;
-        Ok(job.job_id)
+        self.send_prover_request(data, &url).await
     }
+
     pub async fn run_cairo0(&self, data: Cairo0ProverInput) -> Result<u64, SdkErrors> {
         if !data.layout.is_bootloadable()
             && matches!(data.run_mode, common::prover_input::RunMode::Bootload)
@@ -100,58 +129,19 @@ impl ProverSDK {
         {
             return Err(SdkErrors::BootloaderError);
         }
-        self.prove(ProverInput::Cairo(data), self.run_cairo.clone())
+        self.run(ProverInput::Cairo(data), self.run_cairo.clone())
             .await
     }
 
     async fn run(&self, data: ProverInput, url: Url) -> Result<u64, SdkErrors> {
-        let response = self
-            .client
-            .post(url.clone())
-            .json(&data.to_json_value())
-            .send()
-            .await?;
-
-        if !response.status().is_success() {
-            let response_data: String = response.text().await?;
-            tracing::error!("{}", response_data);
-            return Err(SdkErrors::ProveResponseError(response_data));
-        }
-        let response_data = response.text().await?;
-        let job = serde_json::from_str::<JobId>(&response_data)?;
-        Ok(job.job_id)
+        self.send_prover_request(data, &url).await
     }
+
     pub async fn snos_pie_gen(&self, data: SnosPieInput) -> Result<u64, SdkErrors> {
-        let response = self
-            .client
-            .post(self.snos_pie_gen.clone())
-            .json(&serde_json::to_value(&data).unwrap())
-            .send()
-            .await?;
-        if !response.status().is_success() {
-            let response_data: String = response.text().await?;
-            tracing::error!("{}", response_data);
-            return Err(SdkErrors::ProveResponseError(response_data));
-        }
-        let response_data = response.text().await?;
-        let job = serde_json::from_str::<JobId>(&response_data)?;
-        Ok(job.job_id)
+        self.send_prover_request(data, &self.snos_pie_gen).await
     }
     pub async fn layout_bridge(&self, data: LayoutBridgeInput) -> Result<u64, SdkErrors> {
-        let response = self
-            .client
-            .post(self.layout_bridge.clone())
-            .json(&serde_json::to_value(&data).unwrap())
-            .send()
-            .await?;
-        if !response.status().is_success() {
-            let response_data: String = response.text().await?;
-            tracing::error!("{}", response_data);
-            return Err(SdkErrors::ProveResponseError(response_data));
-        }
-        let response_data = response.text().await?;
-        let job = serde_json::from_str::<JobId>(&response_data)?;
-        Ok(job.job_id)
+        self.send_prover_request(data, &self.layout_bridge).await
     }
     pub async fn verify(self, proof: String) -> Result<String, SdkErrors> {
         let response = self
@@ -163,6 +153,7 @@ impl ProverSDK {
         let response_data = response.text().await?;
         Ok(response_data)
     }
+
     pub async fn get_job(&self, job_id: u64) -> Result<Response, SdkErrors> {
         let url = format!("{}/{}", self.get_job.clone().as_str(), job_id);
         let response = self.client.get(url).send().await?;
@@ -173,6 +164,7 @@ impl ProverSDK {
         }
         Ok(response)
     }
+
     pub async fn register(&mut self, key: VerifyingKey) -> Result<(), SdkErrors> {
         let signature = self.authority.0.sign(key.as_bytes());
         let request = AddKeyRequest {
@@ -194,6 +186,7 @@ impl ProverSDK {
         }
         Ok(())
     }
+
     pub async fn sse(&self, job_id: u64) -> Result<(), SdkErrors> {
         let url = format!("{}?job_id={}", self.sse.clone().as_str(), job_id);
         let response = self.client.get(url).send().await?;

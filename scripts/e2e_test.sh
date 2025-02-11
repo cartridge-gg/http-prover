@@ -46,9 +46,6 @@ if [ "$CONTAINER_ENGINE" == "podman" ]; then
 fi
 $CONTAINER_ENGINE run -d --name http_prover_test $REPLACE_FLAG \
     -p 3040:3000 $IMAGE_NAME \
-    --jwt-secret-key "secret" \
-    --message-expiration-time 3600 \
-    --session-expiration-time 3600 \
     --authorized-keys $PUBLIC_KEY,$ADMIN_PUBLIC_KEY1,$ADMIN_PUBLIC_KEY2 \
     --admin-keys $ADMIN_PUBLIC_KEY1,$ADMIN_PUBLIC_KEY2
 

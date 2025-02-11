@@ -52,3 +52,6 @@ anyhow = "1.0.89"
 prove_block = { git = "https://github.com/chudkowsky/snos", rev = "bbae3c8fa7c38e46b0d80fc1ba9f3de8933ba341" }
 
 cairo-vm = { git = "https://github.com/Moonsong-Labs/cairo-vm", branch = "notlesh/snos-2024-11-04", default-features = false }
+sha2 = "0.10.8"
+hex = "0.4.3"
+http-body-util = "0.1.0"

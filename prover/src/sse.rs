@@ -1,4 +1,4 @@
-use crate::{auth::jwt::Claims, server::AppState};
+use crate::server::AppState;
 use async_stream::stream;
 use axum::{
     extract::{Query, State},
@@ -17,7 +17,6 @@ pub struct JobParams {
 pub async fn sse_handler(
     State(state): State<AppState>,
     Query(params): Query<JobParams>,
-    _claims: Claims,
 ) -> Sse<impl Stream<Item = Result<axum::response::sse::Event, Infallible>>> {
     info!("SSE handler connected");
     let mut rx = state.sse_tx.lock().await.subscribe();
