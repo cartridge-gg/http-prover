@@ -12,7 +12,7 @@ use std::{
 };
 use tokio::sync::Mutex;
 
-use crate::{auth::jwt::Claims, errors::ProverError, server::AppState};
+use crate::{errors::ProverError, server::AppState};
 
 #[derive(Clone)]
 pub struct Job {
@@ -89,7 +89,6 @@ impl JobStoreInner {
 pub async fn get_job(
     Path(id): Path<u64>,
     State(app_state): State<AppState>,
-    _claims: Claims,
 ) -> Result<impl IntoResponse, ProverError> {
     if let Some(job) = app_state.job_store.get_job(id).await {
         let (status, response) = match job.status {

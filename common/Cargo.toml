@@ -11,3 +11,5 @@ ed25519-dalek.workspace = true
 starknet-types-core.workspace = true
 clap.workspace = true
 cairo-vm.workspace = true
+sha2.workspace = true
+hex.workspace = true

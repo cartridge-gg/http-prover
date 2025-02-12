@@ -19,12 +19,6 @@ pub struct Args {
     pub host: String,
     #[arg(long, short, env, default_value = "3000")]
     pub port: u16,
-    #[arg(long, short, env, default_value = "3600")]
-    pub message_expiration_time: usize,
-    #[arg(long, short, env, default_value = "3600")]
-    pub session_expiration_time: usize,
-    #[arg(long, short, env)]
-    pub jwt_secret_key: String,
     #[arg(long, env, default_value = "authorized_keys.json")]
     pub authorized_keys_path: PathBuf,
     #[arg(long, env, value_delimiter = ',')]

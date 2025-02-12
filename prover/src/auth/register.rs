@@ -3,11 +3,10 @@ use common::requests::AddKeyRequest;
 
 use crate::{errors::ProverError, server::AppState};
 
-use super::{auth_errors::AuthError, authorizer::AuthorizationProvider, jwt::Claims};
+use super::{auth_errors::AuthError, authorizer::AuthorizationProvider};
 
 pub async fn register(
     State(state): State<AppState>,
-    _claims: Claims,
     Json(payload): Json<AddKeyRequest>,
 ) -> Result<impl IntoResponse, ProverError> {
     if !state.admin_keys.contains(&payload.authority) {

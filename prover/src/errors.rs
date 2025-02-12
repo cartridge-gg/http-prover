@@ -16,7 +16,7 @@ pub enum ProverError {
     #[error(transparent)]
     Parse(#[from] serde_json::Error),
     #[error(transparent)]
-    FileWriteError(#[from] std::io::Error),
+    StdIoError(#[from] std::io::Error),
     #[error(transparent)]
     InfallibleError(#[from] Infallible),
     #[error("{0}")]
@@ -39,6 +39,8 @@ pub enum ProverError {
     ParserError(#[from] AnyhowError),
     #[error("{0}")]
     InvalidRunMode(String),
+    #[error("{0}")]
+    TraceGenerationError(String),
 }
 impl<T> From<SendError<T>> for ProverError {
     fn from(err: SendError<T>) -> ProverError {
@@ -53,7 +55,8 @@ impl From<Vec<u8>> for ProverError {
 impl IntoResponse for ProverError {
     fn into_response(self) -> Response {
         let (status, error_message) = match &self {
-            ProverError::FileWriteError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            ProverError::StdIoError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            ProverError::TraceGenerationError(e) => (StatusCode::BAD_REQUEST, e.to_string()),
             ProverError::InvalidRunMode(e) => (StatusCode::BAD_REQUEST, e.to_string()),
             ProverError::Parse(e) => (StatusCode::BAD_REQUEST, e.to_string()),
             ProverError::InfallibleError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),

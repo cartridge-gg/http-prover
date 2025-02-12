@@ -33,6 +33,4 @@ async fn test_register_unauthorized() {
     //Trying to register a new key using not admin key, should return error
     let response = sdk.register(random_key.0.verifying_key()).await;
     assert!(response.is_err());
-    let new_sdk = ProverSDK::new(url, random_key).await;
-    assert!(new_sdk.is_err());
 }

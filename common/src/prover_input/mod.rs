@@ -7,7 +7,10 @@ pub use cairo::{CairoCompiledProgram, CairoProverInput};
 pub use cairo0::LayoutBridgeInput;
 pub use cairo0::{Cairo0CompiledProgram, Cairo0ProverInput};
 use clap::ValueEnum;
+use ed25519_dalek::SigningKey;
 use serde::{Deserialize, Serialize};
+
+use crate::{sign_data, HttpProverData};
 
 #[derive(Debug)]
 pub enum ProverInput {
@@ -21,14 +24,30 @@ pub enum RunMode {
     Trace,
 }
 
-impl ProverInput {
-    pub fn to_json_value(&self) -> serde_json::Value {
+impl HttpProverData for ProverInput {
+    fn to_json_value(&self) -> serde_json::Value {
         match self {
             ProverInput::Cairo0(input) => serde_json::to_value(input).unwrap(),
             ProverInput::Cairo(input) => serde_json::to_value(input).unwrap(),
         }
     }
+    fn sign(&self, signing_key: SigningKey, timestamp: String, nonce: u64) -> String {
+        match self {
+            ProverInput::Cairo0(input) => sign_data(input, &timestamp, &signing_key, nonce),
+            ProverInput::Cairo(input) => sign_data(input, &timestamp, &signing_key, nonce),
+        }
+    }
 }
+
+impl HttpProverData for LayoutBridgeInput {
+    fn to_json_value(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap()
+    }
+    fn sign(&self, signing_key: SigningKey, timestamp: String, nonce: u64) -> String {
+        sign_data(self, &timestamp, &signing_key, nonce)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum Layout {
     Small,

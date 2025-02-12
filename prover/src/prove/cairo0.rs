@@ -1,4 +1,3 @@
-use crate::auth::jwt::Claims;
 use crate::server::AppState;
 use crate::threadpool::{
     task::{ProveParams, Task, TaskCommon},
@@ -11,7 +10,6 @@ use serde_json::json;
 
 pub async fn root(
     State(app_state): State<AppState>,
-    _claims: Claims,
     Json(program_input): Json<Cairo0ProverInput>,
 ) -> impl IntoResponse {
     let thread_pool = app_state.proving_thread_pool.clone();
