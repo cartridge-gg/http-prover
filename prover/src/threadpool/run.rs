@@ -134,10 +134,7 @@ impl CairoVersionedInput {
             }
             CairoVersionedInput::Cairo0(input) => {
                 fs::write(paths.program, &input.program)?;
-                fs::write(
-                    paths.program_input_path.clone(),
-                    serde_json::to_string(&input.program_input)?,
-                )?;
+                fs::write(paths.program_input_path.clone(), &input.program_input)?;
             }
         }
         Ok(())

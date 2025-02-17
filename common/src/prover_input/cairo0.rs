@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cairo0ProverInput {
     pub program: Vec<u8>,
-    pub program_input: serde_json::Value,
+    pub program_input: Vec<u8>,
     pub layout: Layout,
     pub n_queries: Option<u32>,
     pub pow_bits: Option<u32>,
@@ -28,5 +28,5 @@ pub struct Cairo0CompiledProgram {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LayoutBridgeInput {
-    pub proof: String,
+    pub proof: Vec<u8>,
 }

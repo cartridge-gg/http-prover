@@ -5,7 +5,6 @@ use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, Cairo0ProverInput, CairoCompiledProgram,
     CairoProverInput, JobResult, Layout, ProverResult, RunMode,
 };
-use serde_json::Value;
 use url::Url;
 
 use crate::{
@@ -82,12 +81,11 @@ pub async fn prove(args: Prove, sdk: ProverSDK) -> u64 {
     match args.cairo_version {
         CairoVersion::V0 => {
             let program = std::fs::read(&args.program_path).unwrap();
-            let input = std::fs::read_to_string(args.program_input_path).unwrap();
-            let program_input: Value = serde_json::from_str(&input).unwrap();
+            let input = std::fs::read(args.program_input_path).unwrap();
             let data = Cairo0ProverInput {
                 program,
                 layout: args.layout,
-                program_input,
+                program_input: input,
                 pow_bits: args.pow_bits,
                 n_queries: args.n_queries,
                 run_mode: args.run_mode,

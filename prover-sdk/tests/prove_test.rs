@@ -1,7 +1,6 @@
 use common::prover_input::*;
 use helpers::{fetch_job, handle_completed_job_response};
 use prover_sdk::{access_key::ProverAccessKey, sdk::ProverSDK};
-use serde_json::Value;
 
 use starknet_types_core::felt::Felt;
 
@@ -108,8 +107,7 @@ async fn test_cairo0_prove_bootloader() {
     let url = Url::parse(&url).unwrap();
     let sdk = ProverSDK::new(url, access_key).await.unwrap();
     let program = std::fs::read("../examples/cairo0/fibonacci_compiled.json").unwrap();
-    let program_input_string = std::fs::read_to_string("../examples/cairo0/input.json").unwrap();
-    let program_input: Value = serde_json::from_str(&program_input_string).unwrap();
+    let program_input = std::fs::read("../examples/cairo0/input.json").unwrap();
     let data = Cairo0ProverInput {
         program,
         layout: Layout::Recursive,
@@ -149,8 +147,7 @@ async fn test_cairo0_prove() {
     let url = Url::parse(&url).unwrap();
     let sdk = ProverSDK::new(url, access_key).await.unwrap();
     let program = std::fs::read("../examples/cairo0/fibonacci_compiled.json").unwrap();
-    let program_input_string = std::fs::read_to_string("../examples/cairo0/input.json").unwrap();
-    let program_input: Value = serde_json::from_str(&program_input_string).unwrap();
+    let program_input = std::fs::read("../examples/cairo0/input.json").unwrap();
     let data = Cairo0ProverInput {
         program,
         layout: Layout::Recursive,
