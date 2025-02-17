@@ -34,7 +34,7 @@ impl LayoutBridgeRunner {
         let sdk = ProverSDK::new(self.prover_url.clone(), access_key)
             .await
             .unwrap();
-        let proof = fs::read_to_string(self.input).unwrap();
+        let proof = fs::read(self.input).unwrap();
         let input = LayoutBridgeInput { proof };
         let job = sdk.layout_bridge(input).await.unwrap();
         if self.wait {

@@ -35,7 +35,7 @@ pub struct RunParams {
 
 pub struct LayoutBridgeParams {
     pub common: TaskCommon,
-    pub proof: String,
+    pub proof: Vec<u8>,
 }
 pub struct SnosParams {
     pub common: TaskCommon,
@@ -82,7 +82,7 @@ impl Task {
             }
             Task::LayoutBridge(params) => {
                 info!("Executing layout bridge for job {}", params.common.job_id);
-                layout_bridge(&params.common, &params.proof).await
+                layout_bridge(&params.common, params.proof.clone()).await
             }
             Task::Snos(params) => {
                 let program_input = params.input.clone();

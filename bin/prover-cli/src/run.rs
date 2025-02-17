@@ -5,7 +5,6 @@ use prover_sdk::{
     access_key::ProverAccessKey, sdk::ProverSDK, Cairo0ProverInput, CairoCompiledProgram,
     CairoProverInput, JobResult, Layout, RunMode, RunResult,
 };
-use serde_json::Value;
 use tokio::fs;
 use url::Url;
 
@@ -101,12 +100,11 @@ pub async fn cairo_runner(args: CairoRunner, sdk: ProverSDK) -> u64 {
     match args.cairo_version {
         CairoVersion::V0 => {
             let program = std::fs::read(&args.program_path).unwrap();
-            let input = std::fs::read_to_string(args.program_input_path).unwrap();
-            let program_input: Value = serde_json::from_str(&input).unwrap();
+            let input = std::fs::read(args.program_input_path).unwrap();
             let data = Cairo0ProverInput {
                 program,
                 layout: args.layout,
-                program_input,
+                program_input: input,
                 pow_bits: None,
                 n_queries: None,
                 run_mode: args.run_mode,
